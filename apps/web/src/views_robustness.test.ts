@@ -154,4 +154,58 @@ describe('Timetable matching and period generation robustness', () => {
     const set = new Set(keys);
     expect(set.size).toBe(exams.length);
   });
+
+  it('assigns vibrant, distinct colors to subjects and handles exam type badges', async () => {
+    const { subjectColor, subjectTextColor } = await import('./lib.js');
+    const { getExamTypeBadge } = await import('./views/Exams.js');
+
+    // Known standard subjects get distinct defined colors
+    const dColor = subjectColor(0, 'D');
+    const mColor = subjectColor(0, 'AM');
+    const eColor = subjectColor(0, 'E1');
+    const posColor = subjectColor(0, 'POS1');
+    const nscsColor = subjectColor(0, 'NSCS_1');
+
+    expect(dColor).toBe('#dc2626');
+    expect(mColor).toBe('#2563eb');
+    expect(eColor).toBe('#eab308');
+    expect(posColor).toBe('#10b981');
+    expect(nscsColor).toBe('#6366f1');
+
+    // Unknown subjects get deterministic golden-angle hues
+    const custom1 = subjectColor(0, 'SPECIAL_XYZ');
+    const custom2 = subjectColor(0, 'ANOTHER_ABC');
+    expect(custom1).toMatch(/^hsl\(\d+ 68% 48%\)$/);
+    expect(custom2).toMatch(/^hsl\(\d+ 68% 48%\)$/);
+    expect(custom1).not.toBe(custom2);
+
+    // Text color contrast test
+    expect(subjectTextColor('#ffffff')).toBe('#0f172a');
+    expect(subjectTextColor('#000000')).toBe('#ffffff');
+    expect(subjectTextColor('#ef4444')).toBe('#ffffff');
+    expect(subjectTextColor('#eab308')).toBe('#0f172a'); // yellow gets dark text
+    expect(subjectTextColor('hsl(60 68% 50%)')).toBe('#0f172a'); // yellow hsl gets dark text
+    expect(subjectTextColor('hsl(240 68% 50%)')).toBe('#ffffff'); // blue hsl gets white text
+
+    // Exam type badges
+    const saBadge = getExamTypeBadge('SA_TE');
+    expect(saBadge.label).toBe('Schularbeit');
+    expect(saBadge.color).toBe('#ef4444');
+
+    const testBadge = getExamTypeBadge('Test');
+    expect(testBadge.label).toBe('Test');
+    expect(testBadge.color).toBe('#f59e0b');
+
+    const plfBadge = getExamTypeBadge('PLF');
+    expect(plfBadge.label).toBe('PLF (Praktisch)');
+    expect(plfBadge.color).toBe('#8b5cf6');
+
+    const abgabeBadge = getExamTypeBadge('Abgabe');
+    expect(abgabeBadge.label).toBe('Abgabe');
+    expect(abgabeBadge.color).toBe('#0284c7');
+
+    const defaultBadge = getExamTypeBadge(undefined);
+    expect(defaultBadge.label).toBe('Prüfung');
+    expect(defaultBadge.color).toBe('#6366f1');
+  });
 });

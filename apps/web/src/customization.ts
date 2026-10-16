@@ -97,31 +97,68 @@ export interface CustomizationState {
 
 const STORAGE_KEY = 'up.customization';
 
-/** Standard Austrian notebook colors (Schulhefte-Farben) */
+/** Standard Austrian notebook & school colors (Schulhefte-Farben & HTL/AHS/BHS) */
 export const AUSTRIAN_SUBJECT_PRESET: Record<string, string> = {
   D: '#dc2626', // Deutsch - Rot
+  DEUTSCH: '#dc2626',
   M: '#2563eb', // Mathematik - Blau
+  AM: '#2563eb', // Angewandte Mathematik - Blau
+  MATH: '#2563eb',
   E: '#eab308', // Englisch - Gelb
+  E1: '#eab308',
+  ENGLISCH: '#eab308',
+  POS: '#10b981', // Programmieren / SEW - Smaragdgrün
+  POS1: '#10b981',
+  SEW: '#10b981',
+  PRG: '#10b981',
+  INF: '#059669', // Informatik
+  INFORMATIK: '#059669',
+  DBI: '#f97316', // Datenbanken - Orange
+  DBI_1: '#f97316',
+  NSCS: '#6366f1', // Netzwerksicherheit & Cloud - Indigo
+  NSCS_1: '#6366f1',
+  SYT: '#6366f1',
+  SYS: '#6366f1',
+  NW: '#06b6d4', // Naturwissenschaften / Netzwerke - Cyan
+  NW2: '#06b6d4',
+  WMC: '#14b8a6', // Web & Mobile Computing - Teal
+  WMC_1: '#14b8a6',
+  MEDT: '#14b8a6',
+  SYP: '#8b5cf6', // Systemplanung - Violett
+  SYP1: '#8b5cf6',
+  PRE: '#8b5cf6',
+  BWM: '#ca8a04', // Betriebswirtschaft - Gold
+  BWM_1: '#ca8a04',
+  BWM_2: '#a16207',
+  BW: '#ca8a04',
+  BWL: '#ca8a04',
+  RW: '#d97706',
+  GGP: '#ec4899', // Geschichte & Politische Bildung - Rose
+  GPB: '#ec4899',
+  GS: '#7c3aed', // Geschichte & Sozialkunde - Violett
+  GSP: '#7c3aed',
   BIO: '#16a34a', // Biologie - Grün
   BU: '#16a34a', // Biologie & Umweltkunde
   GWK: '#ea580c', // Geographie & Wirtschaftskunde - Orange
   GEO: '#ea580c',
-  GS: '#7c3aed', // Geschichte & Sozialkunde - Violett
-  GSP: '#7c3aed',
   PH: '#0891b2', // Physik - Cyan
+  PHYSIK: '#0891b2',
   CH: '#db2777', // Chemie - Pink/Magenta
   REL: '#4b5563', // Religion - Grau
+  RK: '#4b5563',
   RKA: '#4b5563',
   REV: '#4b5563',
+  ETH: '#9333ea', // Ethik
   BE: '#f43f5e', // Bildnerische Erziehung - Rose/Bunt
   ME: '#8b5cf6', // Musikerziehung - Lila
   BSP: '#059669', // Bewegung und Sport - Smaragdgrün
   BSPK: '#059669',
   BSPM: '#059669',
-  INF: '#0284c7', // Informatik - Hellblau
+  SPORT: '#059669',
   F: '#0284c7', // Französisch
   L: '#9333ea', // Latein
   IT: '#0d9488', // Italienisch
+  ITA: '#0d9488',
   SP: '#d97706', // Spanisch
   WE: '#b45309', // Werken
 };

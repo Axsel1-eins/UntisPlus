@@ -27,7 +27,7 @@ export function getExamTypeBadge(rawType?: string): { label: string; color: stri
   }
   if (norm.includes('PLF') || norm.includes('PRAKTISCH')) {
     return {
-      label: rawType || 'PLF (Praktisch)',
+      label: rawType === 'PLF' ? 'PLF (Praktisch)' : (rawType || 'PLF (Praktisch)'),
       color: '#8b5cf6',
       icon: '🛠️',
     };
