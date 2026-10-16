@@ -876,10 +876,24 @@ function PeriodRowView({
           const hasInfo = Boolean(l.info || l.substText);
           const hasExam =
             l.status === 'EXAM' ||
-            exams.some((e) => e.date === l.date && (!subj || e.subject?.id === subj.id));
+            exams.some(
+              (e) =>
+                e.date === l.date &&
+                (!subj ||
+                  (e.subject?.id && subj.id && e.subject.id === subj.id) ||
+                  (e.subject?.name &&
+                    subj.name &&
+                    e.subject.name.trim().toUpperCase() === subj.name.trim().toUpperCase())),
+            );
           const hasHw =
             homework.some(
-              (h) => (h.dueDate === l.date || h.date === l.date) && (!subj || h.subject?.id === subj.id),
+              (h) =>
+                (h.dueDate === l.date || h.date === l.date) &&
+                (!subj ||
+                  (h.subject?.id && subj.id && h.subject.id === subj.id) ||
+                  (h.subject?.name &&
+                    subj.name &&
+                    h.subject.name.trim().toUpperCase() === subj.name.trim().toUpperCase())),
             );
           const examHighlightClass = hasExam
             ? `has-exam exam-${customization.examHighlight ?? 'pulse-glow'}`

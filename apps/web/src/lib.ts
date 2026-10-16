@@ -19,8 +19,89 @@ export function todayIso(d = new Date()): string {
 }
 
 /**
+ * Built-in default color palette for common DACH / Austrian school subjects.
+ * Provides instant, recognizable, and distinct colors across all views.
+ */
+export const DEFAULT_SUBJECT_COLORS: Record<string, string> = {
+  // Languages & Humanities
+  D: '#ef4444',        // Red / Crimson (Deutsch)
+  DEUTSCH: '#ef4444',
+  E: '#f59e0b',        // Amber (Englisch)
+  E1: '#f59e0b',
+  ENGLISCH: '#f59e0b',
+  ENG: '#f59e0b',
+  F: '#0ea5e9',        // Sky Blue (Französisch)
+  FRANZÖSISCH: '#0ea5e9',
+  ITA: '#10b981',      // Emerald (Italienisch)
+  SP: '#f97316',       // Orange (Spanisch)
+  L: '#8b5cf6',        // Purple (Latein)
+
+  // Mathematics & Science
+  M: '#2563eb',        // Blue (Mathematik)
+  AM: '#2563eb',       // Blue (Angewandte Mathematik)
+  MATH: '#2563eb',
+  MATHEMATIK: '#2563eb',
+  PH: '#0284c7',       // Cyan / Light Blue (Physik)
+  PHYSIK: '#0284c7',
+  CH: '#84cc16',       // Lime (Chemie)
+  CHEMIE: '#84cc16',
+  BIO: '#15803d',      // Forest Green (Biologie)
+  BIOLOGIE: '#15803d',
+  NW: '#06b6d4',       // Cyan / Teal (Naturwissenschaften / Netzwerke)
+  NW2: '#06b6d4',
+  NWT: '#06b6d4',
+
+  // Computer Science & Technology
+  POS: '#10b981',      // Emerald Green (Programmieren / Softwareentwicklung)
+  POS1: '#10b981',
+  SEW: '#10b981',      // Softwareentwicklung
+  PRG: '#10b981',      // Programmierung
+  INF: '#059669',      // Informatik
+  INFORMATIK: '#059669',
+  DBI: '#f97316',      // Vivid Orange (Datenbanken)
+  DBI_1: '#f97316',
+  DATENBANKEN: '#f97316',
+  NSCS: '#6366f1',     // Indigo / Electric (Netzwerksicherheit & Cloud)
+  NSCS_1: '#6366f1',
+  SYT: '#6366f1',      // Systemtechnik
+  SYS: '#6366f1',
+  WMC: '#14b8a6',      // Teal (Web & Mobile Computing)
+  WMC_1: '#14b8a6',
+  MEDT: '#14b8a6',     // Medientechnik
+  SYP: '#8b5cf6',      // Purple (Systemplanung & Projektentwicklung)
+  SYP1: '#8b5cf6',
+  PRE: '#8b5cf6',      // Projektentwicklung
+
+  // Economics & Social Studies
+  BWM: '#eab308',      // Gold / Yellow (Betriebswirtschaft)
+  BWM_1: '#eab308',
+  BWM_2: '#ca8a04',    // Dark Gold
+  BW: '#eab308',
+  BWL: '#eab308',
+  RW: '#d97706',       // Rechnungswesen
+  GGP: '#ec4899',      // Pink / Rose (Geschichte & Politische Bildung)
+  GPB: '#ec4899',
+  GS: '#ec4899',
+  GW: '#0d9488',       // Geografie
+  GWK: '#0d9488',
+
+  // Sports, Religion & Arts
+  BSP: '#22c55e',      // Bright Green (Bewegung und Sport)
+  BSPK: '#22c55e',
+  BSPM: '#16a34a',
+  SPORT: '#22c55e',
+  RK: '#a855f7',       // Violet (Religion katholisch)
+  EV: '#a855f7',       // Religion evangelisch
+  REL: '#a855f7',
+  ETH: '#9333ea',      // Ethik
+  ME: '#e11d48',       // Musikerziehung
+  BE: '#f43f5e',       // Bildnerische Erziehung
+};
+
+/**
  * Deterministic, pleasant colour per subject/element id,
- * with priority given to user-customized subject colors.
+ * with priority given to user-customized subject colors, followed by
+ * standard subject defaults, and finally wide-spectrum golden-angle hashing.
  */
 export function subjectColor(id: number | undefined, name?: string): string {
   if (name) {
@@ -30,20 +111,37 @@ export function subjectColor(id: number | undefined, name?: string): string {
     // Strip suffixes like "D1", "M-GK", "BIO_2"
     const base = clean.replace(/[-_0-9].*$/, '').trim();
     if (base && custom[base]) return custom[base];
+
+    // Check built-in standard subjects
+    if (DEFAULT_SUBJECT_COLORS[clean]) return DEFAULT_SUBJECT_COLORS[clean];
+    if (base && DEFAULT_SUBJECT_COLORS[base]) return DEFAULT_SUBJECT_COLORS[base];
+
+    // Wide-spectrum golden-angle hashing based on clean subject name
+    let hash = 0;
+    for (let i = 0; i < clean.length; i++) {
+      hash = ((hash << 5) - hash) + clean.charCodeAt(i);
+      hash |= 0;
+    }
+    const hue = Math.round((Math.abs(hash) * 137.508) % 360);
+    return `hsl(${hue} 68% 48%)`;
   }
-  const hue = id === undefined ? 232 : (id * 47) % 360;
-  return `hsl(${hue} 62% 52%)`;
+  if (id !== undefined && id > 0) {
+    const hue = Math.round((id * 137.508) % 360);
+    return `hsl(${hue} 68% 48%)`;
+  }
+  return 'hsl(215 68% 50%)';
 }
 
 /**
  * Calculates a contrasting text color (white or dark slate)
  * for a given subject background color according to WCAG luminance.
+ * Supports #hex, rgb(...) and hsl(...).
  */
 export function subjectTextColor(bgColor: string): string {
   if (!bgColor) return '#ffffff';
-  let hex = bgColor.trim();
-  if (hex.startsWith('#')) {
-    hex = hex.slice(1);
+  const str = bgColor.trim();
+  if (str.startsWith('#')) {
+    let hex = str.slice(1);
     if (hex.length === 3) {
       hex = hex.split('').map((c) => c + c).join('');
     }
@@ -56,6 +154,13 @@ export function subjectTextColor(bgColor: string): string {
         return lum > 155 ? '#0f172a' : '#ffffff';
       }
     }
+  }
+  const hslMatch = str.match(/hsl\(\s*(\d+)(?:deg)?\s+(\d+)%\s+(\d+)%\s*\)/i);
+  if (hslMatch) {
+    const h = Number(hslMatch[1]);
+    const l = Number(hslMatch[3]);
+    if (l >= 65 || (h >= 40 && h <= 80 && l >= 45)) return '#0f172a';
+    return '#ffffff';
   }
   return '#ffffff';
 }

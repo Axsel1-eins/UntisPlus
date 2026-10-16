@@ -4,10 +4,54 @@ import { addDays, minutesToTime, type Exam } from '@untisplus/shared';
 import { api } from '../api.js';
 import { useModule, useWeekLessons } from '../data.js';
 import { useApp } from '../store.js';
-import { dowShort, names, primarySubject, subjectColor, todayIso } from '../lib.js';
+import { dowShort, names, primarySubject, subjectColor, subjectTextColor, todayIso } from '../lib.js';
 import { EmptyState, ErrorState, Icon, Segmented } from '../components/primitives.js';
 import { ListSkeleton, ModuleHeader, ModuleUnavailable, PageSubtitle } from '../components/module-ui.js';
 import { CalendarExportModal } from '../components/CalendarExportModal.js';
+
+export function getExamTypeBadge(rawType?: string): { label: string; color: string; icon: string } {
+  const norm = (rawType ?? '').trim().toUpperCase();
+  if (norm.startsWith('SA') || norm.includes('SCHULARBEIT')) {
+    return {
+      label: rawType && !rawType.startsWith('SA_') ? rawType : 'Schularbeit',
+      color: '#ef4444',
+      icon: '📝',
+    };
+  }
+  if (norm.includes('ABGABE') || norm.includes('PROJEKT')) {
+    return {
+      label: rawType || 'Abgabe',
+      color: '#0284c7',
+      icon: '📦',
+    };
+  }
+  if (norm.includes('PLF') || norm.includes('PRAKTISCH')) {
+    return {
+      label: rawType || 'PLF (Praktisch)',
+      color: '#8b5cf6',
+      icon: '🛠️',
+    };
+  }
+  if (norm.includes('SMÜ') || norm.includes('MÜNDLICH') || norm.includes('MITARBEIT')) {
+    return {
+      label: rawType || 'Mündlich / SMÜ',
+      color: '#10b981',
+      icon: '🗣️',
+    };
+  }
+  if (norm.includes('TEST') || norm.includes('FACHPRÜFUNG')) {
+    return {
+      label: rawType || 'Test',
+      color: '#f59e0b',
+      icon: '⏱️',
+    };
+  }
+  return {
+    label: rawType || 'Prüfung',
+    color: '#6366f1',
+    icon: '🎓',
+  };
+}
 
 interface ExamPrepData {
   notes: string;
@@ -349,6 +393,8 @@ export function ExamsView() {
             <div className="day-list">
               {items.map((e, idx) => {
                 const color = subjectColor(e.subject?.id, e.subject?.name);
+                const textColor = subjectTextColor(color);
+                const typeBadge = getExamTypeBadge(e.type);
                 const diff = daysDiff(e.date, today);
                 const isExpanded = expandedExamId === e.id;
                 const prep = prepMap[e.id] ?? { notes: '', checklist: [] };
@@ -358,61 +404,157 @@ export function ExamsView() {
                 return (
                   <div
                     key={examKey}
-                    className="item"
+                    className="item exam-card"
                     style={{
                       ['--subj' as string]: color,
+                      borderLeft: `5px solid ${color}`,
+                      background: `color-mix(in srgb, ${color} 4.5%, var(--surface))`,
+                      borderColor: `color-mix(in srgb, ${color} 26%, var(--border))`,
+                      boxShadow: `0 2px 10px color-mix(in srgb, ${color} 8%, transparent)`,
                       flexDirection: 'column',
                       alignItems: 'stretch',
                       gap: 10,
+                      transition: 'all 0.15s ease',
                     }}
                   >
-                    <div className="row" style={{ alignItems: 'center', width: '100%', gap: 12 }}>
+                    <div className="row" style={{ alignItems: 'center', width: '100%', gap: 14 }}>
+                      {/* Colored Date Badge Pillar */}
                       <div
                         className="col"
                         style={{
                           flex: 'none',
-                          width: 74,
+                          width: 78,
+                          padding: '7px 4px',
                           alignItems: 'center',
                           justifyContent: 'center',
                           textAlign: 'center',
+                          background: `color-mix(in srgb, ${color} 12%, var(--surface-2))`,
+                          border: `1.5px solid color-mix(in srgb, ${color} 30%, var(--border))`,
+                          borderRadius: 12,
                         }}
                       >
-                        <div className="small muted">{dowShort(e.date, i18n.language)}</div>
                         <div
                           style={{
-                            fontWeight: 800,
-                            fontSize: 18,
+                            fontSize: 11,
+                            fontWeight: 850,
+                            color,
+                            letterSpacing: '0.04em',
+                            textTransform: 'uppercase',
+                          }}
+                        >
+                          {dowShort(e.date, i18n.language)}
+                        </div>
+                        <div
+                          style={{
+                            fontWeight: 900,
+                            fontSize: 19,
+                            lineHeight: 1.25,
                             fontVariantNumeric: 'tabular-nums',
+                            letterSpacing: '-0.02em',
+                            color: 'var(--text)',
                           }}
                         >
                           {e.date.slice(8, 10)}.{e.date.slice(5, 7)}.
                         </div>
-                        <div className="tiny muted">
+                        <div className="tiny muted" style={{ fontWeight: 650 }}>
                           {minutesToTime(e.startMin)}–{minutesToTime(e.endMin)}
                         </div>
                       </div>
 
-                      <div className="item-body" style={{ flex: 1 }}>
-                        <div className="row" style={{ gap: 8, alignItems: 'center' }}>
-                          <span className="item-title">{e.subject?.name ?? '—'}</span>
+                      <div className="item-body" style={{ flex: 1, minWidth: 0 }}>
+                        <div className="row wrap" style={{ gap: 8, alignItems: 'center' }}>
+                          {/* Vibrant Subject Badge */}
+                          <span
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              background: color,
+                              color: textColor,
+                              fontWeight: 850,
+                              fontSize: 14,
+                              padding: '3px 11px',
+                              borderRadius: 8,
+                              letterSpacing: '-0.01em',
+                              boxShadow: `0 2px 7px color-mix(in srgb, ${color} 35%, transparent)`,
+                            }}
+                          >
+                            {e.subject?.name ?? '—'}
+                          </span>
+
+                          {e.subject?.longName && e.subject.longName !== e.subject.name && (
+                            <span style={{ fontWeight: 650, fontSize: 13.5, color: 'var(--text)' }}>
+                              {e.subject.longName}
+                            </span>
+                          )}
+
                           <div className="spacer" />
 
                           {/* Countdown badge */}
                           {diff === 0 ? (
-                            <span className="badge danger">{t('exams.countdownToday')}</span>
+                            <span
+                              className="badge danger"
+                              style={{
+                                fontWeight: 800,
+                                padding: '3px 9px',
+                                fontSize: 12,
+                                boxShadow: '0 0 8px rgba(239, 68, 68, 0.4)',
+                              }}
+                            >
+                              🔥 {t('exams.countdownToday') || 'Heute!'}
+                            </span>
                           ) : diff === 1 ? (
-                            <span className="badge warn">{t('exams.countdownTomorrow')}</span>
-                          ) : diff < 14 ? (
-                            <span className="badge info">
-                              {t('exams.countdownDays', { days: diff })}
+                            <span
+                              className="badge warn"
+                              style={{
+                                fontWeight: 800,
+                                padding: '3px 9px',
+                                fontSize: 12,
+                                boxShadow: '0 0 8px rgba(245, 158, 11, 0.3)',
+                              }}
+                            >
+                              ⏳ {t('exams.countdownTomorrow') || 'Morgen'}
+                            </span>
+                          ) : diff > 0 && diff < 14 ? (
+                            <span className="badge info" style={{ fontWeight: 700, padding: '3px 9px', fontSize: 12 }}>
+                              ⏳ {t('exams.countdownDays', { days: diff })}
+                            </span>
+                          ) : diff >= 14 ? (
+                            <span className="badge info" style={{ fontWeight: 700, padding: '3px 9px', fontSize: 12 }}>
+                              📅 {t('exams.countdownWeeks', { weeks: Math.round(diff / 7) })}
                             </span>
                           ) : (
-                            <span className="badge info">
-                              {t('exams.countdownWeeks', { weeks: Math.round(diff / 7) })}
+                            <span
+                              className="badge"
+                              style={{
+                                background: 'var(--surface-2)',
+                                color: 'var(--muted)',
+                                fontWeight: 600,
+                                padding: '3px 9px',
+                                fontSize: 12,
+                              }}
+                            >
+                              🏁 {t('exams.past') || 'Vergangen'}
                             </span>
                           )}
 
-                          <span className="badge exam">{e.type ?? t('today.exam')}</span>
+                          {/* Exam Type Badge with icon and dedicated accent */}
+                          <span
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: 5,
+                              padding: '3px 10px',
+                              borderRadius: 999,
+                              fontSize: 12,
+                              fontWeight: 800,
+                              background: `color-mix(in srgb, ${typeBadge.color} 15%, var(--surface))`,
+                              color: typeBadge.color,
+                              border: `1px solid color-mix(in srgb, ${typeBadge.color} 38%, transparent)`,
+                            }}
+                          >
+                            <span>{typeBadge.icon}</span>
+                            <span>{typeBadge.label}</span>
+                          </span>
                         </div>
 
                         {e.text && <div className="item-text">{e.text}</div>}
@@ -696,13 +838,16 @@ export function ExamsView() {
                 visibleMySubjects.map((sub) => {
                   const currentGrade = grades[sub.code];
                   const color = subjectColor(undefined, sub.code);
+                  const textColor = subjectTextColor(color);
                   return (
                     <div
                       key={sub.code}
                       className="row wrap"
                       style={{
-                        padding: '10px 12px',
-                        background: 'var(--surface-2)',
+                        padding: '10px 14px',
+                        background: `color-mix(in srgb, ${color} 4%, var(--surface-2))`,
+                        border: `1px solid color-mix(in srgb, ${color} 22%, var(--border))`,
+                        borderLeft: `4px solid ${color}`,
                         borderRadius: 'var(--radius-sm)',
                         alignItems: 'center',
                         gap: 12,
@@ -711,22 +856,35 @@ export function ExamsView() {
                       <div className="row" style={{ gap: 10, flex: 1, minWidth: 140, alignItems: 'center' }}>
                         <span
                           style={{
-                            width: 12,
-                            height: 12,
-                            borderRadius: 999,
+                            display: 'inline-flex',
+                            alignItems: 'center',
                             background: color,
-                            flexShrink: 0,
+                            color: textColor,
+                            fontWeight: 850,
+                            fontSize: 13,
+                            padding: '2px 8px',
+                            borderRadius: 6,
+                            boxShadow: `0 1px 4px color-mix(in srgb, ${color} 30%, transparent)`,
                           }}
-                        />
+                        >
+                          {sub.code}
+                        </span>
                         <div className="col" style={{ flex: 1, minWidth: 0 }}>
-                          <span style={{ fontWeight: 800, fontSize: 15 }}>{sub.code}</span>
-                          {sub.name !== sub.code && (
+                          {sub.name !== sub.code ? (
                             <span
-                              className="tiny muted nowrap"
-                              style={{ maxWidth: 220, overflow: 'hidden', textOverflow: 'ellipsis' }}
+                              className="small"
+                              style={{
+                                fontWeight: 600,
+                                maxWidth: 260,
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap',
+                              }}
                             >
                               {sub.name}
                             </span>
+                          ) : (
+                            <span className="small muted">Fach {sub.code}</span>
                           )}
                         </div>
                       </div>

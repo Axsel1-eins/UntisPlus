@@ -37,8 +37,7 @@ jobs:
         run: npm run build
 
       - name: Sync Capacitor Android
-        working-directory: apps/web
-        run: npx cap sync android
+        run: npm run cap:sync -w @untisplus/web -- android
 
       - name: Grant execute permission for gradlew
         working-directory: apps/web/android
@@ -84,8 +83,7 @@ jobs:
         run: npm run build
 
       - name: Sync Capacitor iOS
-        working-directory: apps/web
-        run: npx cap sync ios
+        run: npm run cap:sync -w @untisplus/web -- ios
 
       - name: Build Xcode Project (Unsigned)
         working-directory: apps/web/ios/App
