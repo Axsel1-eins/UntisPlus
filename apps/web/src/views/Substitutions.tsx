@@ -254,7 +254,7 @@ export function SubstitutionsView() {
       )}
 
       <Dialog open={Boolean(detail)} onClose={() => setDetail(null)} title={t('subs.title')}>
-        {detail && <LessonDetail lesson={detail} role={role} />}
+        {detail && <LessonDetail lesson={detail} role={role} onClose={() => setDetail(null)} />}
       </Dialog>
     </div>
   );

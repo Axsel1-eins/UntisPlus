@@ -253,7 +253,10 @@ export function summarize(session: StoredSession): SessionSummary {
     personId: session.info.personId,
     personType: session.info.personType,
     klasseId: session.info.klasseId,
-    displayName: session.info.displayName,
+    displayName:
+      session.info.displayName ||
+      session.credentials?.user ||
+      (session.info.personType === 2 ? 'Lehrkraft' : 'Schüler:in'),
     children: session.info.children,
     readOnly: session.mode === 'anonymous',
   };

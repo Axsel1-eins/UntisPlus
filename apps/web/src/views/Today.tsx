@@ -69,7 +69,8 @@ export function TodayView() {
 
   const weekDays = useMemo(() => Array.from({ length: 7 }, (_, i) => addDays(weekStart, i)), [weekStart]);
   const visibleDays = weekDays.filter((d) => !isWeekendIso(d));
-  const days = visibleDays.length ? visibleDays : weekDays;
+  const showWeekend = customization.showWeekend || isWeekendIso(selectedDay);
+  const days = showWeekend ? weekDays : (visibleDays.length ? visibleDays : weekDays);
 
   const dayLessons = useMemo(() => lessonsForDay(lessons, selectedDay), [lessons, selectedDay]);
 
