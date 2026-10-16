@@ -1809,19 +1809,21 @@ label.field {
 }
 
 /* --- toasts --- */
+.toasts,
 .toast-stack {
   position: fixed;
   z-index: 80;
   left: 50%;
   transform: translateX(-50%);
-  bottom: calc(var(--nav-h) + 14px);
+  bottom: calc(var(--nav-h) + env(safe-area-inset-bottom, 0px) + 12px);
   display: flex;
-  flex-direction: column;
+  flex-direction: column-reverse;
   gap: 8px;
-  width: min(92vw, 460px);
+  width: min(92vw, 440px);
   pointer-events: none;
 }
 @media (min-width: 900px) {
+  .toasts,
   .toast-stack {
     bottom: 22px;
   }
@@ -2111,3 +2113,120 @@ label.field {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
   padding: 7px 12px;
 }
+
+/* ============================================================================
+   Smartphone & Native App UX Enhancements
+   ========================================================================== */
+
+/* Mobile More Sheet */
+.mobile-more-sheet {
+  max-width: 540px;
+  width: 100%;
+}
+.mobile-more-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-top: 8px;
+}
+@media (max-width: 380px) {
+  .mobile-more-grid {
+    grid-template-columns: 1fr;
+  }
+}
+.mobile-more-card {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 11px 12px;
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+  transition: transform 0.08s ease, background 0.15s ease, border-color 0.15s ease;
+  width: 100%;
+}
+.mobile-more-card:active {
+  transform: scale(0.97);
+  background: var(--surface-3);
+}
+.mobile-more-card.active {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+.mobile-more-card .mm-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  display: grid;
+  place-items: center;
+  flex: none;
+  background: var(--surface);
+  color: var(--accent);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+.mobile-more-card.active .mm-icon {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+.mobile-more-card .mm-title {
+  font-weight: 700;
+  font-size: 13px;
+  line-height: 1.25;
+}
+.mobile-more-card .mm-desc {
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.2;
+  margin-top: 2px;
+}
+
+/* Touch targets and smartphone ergonomics */
+@media (max-width: 640px) {
+  .page-title {
+    font-size: 20px;
+  }
+  .main {
+    padding: 12px 12px calc(var(--nav-h) + env(safe-area-inset-bottom, 0px) + 22px) 12px;
+  }
+  .appbar {
+    padding-left: max(12px, env(safe-area-inset-left, 0px));
+    padding-right: max(12px, env(safe-area-inset-right, 0px));
+  }
+  .card.pad {
+    padding: 13px;
+  }
+  .lesson {
+    padding: 10px 12px;
+    gap: 8px;
+    grid-template-columns: 58px 1fr auto;
+  }
+  .lesson .time .start {
+    font-size: 15.5px;
+  }
+  .lesson .subject {
+    font-size: 14.5px;
+  }
+  .lesson .meta {
+    font-size: 12px;
+    gap: 6px;
+  }
+  .tabs {
+    gap: 4px;
+  }
+}
+
+/* Native Capacitor platform tweaks */
+.is-native {
+  -webkit-touch-callout: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.is-native input,
+.is-native textarea {
+  user-select: text;
+  -webkit-user-select: text;
+}
+
