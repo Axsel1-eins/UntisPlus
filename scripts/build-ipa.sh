@@ -25,7 +25,7 @@ if command -v xcodebuild >/dev/null 2>&1; then
   cd "$IOS_DIR"
 
   # Clean and build simulator or device archive
-  xcodebuild -workspace App.xcworkspace \
+  xcodebuild -project App.xcodeproj \
     -scheme App \
     -configuration Release \
     -sdk iphoneos \
