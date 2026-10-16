@@ -252,4 +252,153 @@ describe('WebUntisClient (mocked upstream)', () => {
     const absences = await client.getAbsences('2026-10-12', '2026-10-16');
     expect(absences).toEqual([]);
   });
+
+  it('fetches absences via primary reverse-engineered classreg endpoint', async () => {
+    let requestedUrl = '';
+    const fetchMock = vi.fn(async (url: string) => {
+      requestedUrl = url;
+      if (url.includes('/WebUntis/api/classreg/absences/students')) {
+        return jsonResponse({
+          data: {
+            absences: [
+              {
+                id: 456,
+                startDate: 20261014,
+                endDate: 20261014,
+                startTime: 750,
+                endTime: 1310,
+                reason: 'Krankheit',
+                text: 'Grippe',
+                isExcused: true,
+                excuseStatus: 'entschuldigt',
+              },
+            ],
+          },
+        });
+      }
+      return jsonResponse({});
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const client = new WebUntisClient({ server: 'x.webuntis.com', school: 'x' });
+    client.personId = 987;
+    const absences = await client.getAbsences('2026-10-12', '2026-10-16');
+
+    expect(requestedUrl).toContain('/WebUntis/api/classreg/absences/students');
+    expect(requestedUrl).toContain('studentId=987');
+    expect(requestedUrl).toContain('startDate=20261012');
+    expect(requestedUrl).toContain('endDate=20261016');
+    expect(absences).toHaveLength(1);
+    expect(absences[0]).toEqual({
+      id: '456',
+      start: '2026-10-14',
+      end: '2026-10-14',
+      startTime: '07:50',
+      endTime: '13:10',
+      excused: true,
+      excuseStatus: 'entschuldigt',
+      reason: 'Krankheit',
+      text: 'Grippe',
+      periods: 6,
+    });
+  });
+
+  it('fetches and filters exams via reverse-engineered exams API with assignedStudents and generates stable IDs', async () => {
+    let examUrl = '';
+    const fetchMock = vi.fn(async (url: string) => {
+      if (url.includes('/WebUntis/api/exams')) {
+        examUrl = url;
+        return jsonResponse({
+          data: {
+            exams: [
+              {
+                id: 101,
+                name: 'Math Exam',
+                examDate: 20261019,
+                startTime: 800,
+                endTime: 850,
+                assignedStudents: [{ id: 987 }],
+              },
+              {
+                id: 102,
+                name: 'English Exam',
+                examDate: 20261020,
+                startTime: 850,
+                endTime: 940,
+                assignedStudents: [{ id: 999 }], // different student
+              },
+              {
+                id: 0, // id is 0! Needs stable hash ID
+                name: 'Physics Exam',
+                examDate: 20261021,
+                startTime: 1000,
+                endTime: 1050,
+                assignedStudents: [], // empty -> keep
+              },
+            ],
+          },
+        });
+      }
+      return jsonResponse({});
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const client = new WebUntisClient({ server: 'x.webuntis.com', school: 'x' });
+    client.personId = 987;
+    client.klasseId = 42;
+
+    const exams = await client.getExams('2026-10-19', '2026-10-25');
+    expect(examUrl).toContain('/WebUntis/api/exams');
+    expect(examUrl).toContain('klasseId=42');
+    expect(examUrl).toContain('withGrades=true');
+
+    expect(exams).toHaveLength(2);
+    expect(exams[0]?.id).toBe(101);
+    expect(exams[0]?.text).toBe('Math Exam');
+
+    // Exam 2 was filtered out because assignedStudents was for 999 only.
+    // Exam 3 has stable nonzero generated id
+    expect(exams[1]?.id).toBeGreaterThan(0);
+    expect(exams[1]?.text).toBe('Physics Exam');
+  });
+
+  it('queries room occupancy directly via getRoomOccupancy', async () => {
+    const fetchMock = vi.fn(async (_url: string, opts: { body?: string }) => {
+      const body = opts.body ? JSON.parse(opts.body) : {};
+      if (body.method === 'getTimetable') {
+        return jsonResponse({
+          result: [
+            {
+              id: 1,
+              date: 20261014,
+              startTime: 840,
+              endTime: 930,
+              ro: [{ id: 31, name: 'A101' }],
+              su: [{ id: 5, name: 'M' }],
+            },
+          ],
+        });
+      }
+      return jsonResponse({});
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const client = new WebUntisClient({ server: 'x.webuntis.com', school: 'x' });
+    const grid = [
+      { name: '1', startMin: 470, endMin: 520 },
+      { name: '2', startMin: 520, endMin: 570 },
+    ];
+    const occupancies = await client.getRoomOccupancy(
+      '2026-10-14',
+      [{ id: 31, name: 'A101' }],
+      grid,
+      480, // currentMin: 480 (free now during period 1)
+    );
+
+    expect(occupancies).toHaveLength(1);
+    expect(occupancies[0]?.room.name).toBe('A101');
+    expect(occupancies[0]?.isFreeNow).toBe(true);
+    expect(occupancies[0]?.slots[0]?.occupied).toBe(false);
+    expect(occupancies[0]?.slots[1]?.occupied).toBe(true);
+  });
 });

@@ -66,7 +66,14 @@ function roleFromSession(session: SessionSummary | null): Role {
 }
 
 export function AppProvider({ children }: { children: ReactNode }) {
-  const [session, setSession] = useState<SessionSummary | null>(null);
+  const [session, setSessionState] = useState<SessionSummary | null>(() => {
+    try {
+      const raw = ls.get('up.session');
+      return raw ? (JSON.parse(raw) as SessionSummary) : null;
+    } catch {
+      return null;
+    }
+  });
   const [sessionReady, setSessionReady] = useState(false);
   const [master, setMaster] = useState<MasterData | null>(null);
   const [masterError, setMasterError] = useState<string | null>(null);
@@ -79,6 +86,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
     (ls.get('up.notify') as NotifyPref) ?? 'off',
   );
   const [recentChanges, setRecentChangesState] = useState<LessonChange[]>([]);
+
+  const setSession = useCallback((s: SessionSummary | null) => {
+    if (s) {
+      ls.set('up.session', JSON.stringify(s));
+    } else {
+      if (typeof localStorage !== 'undefined') localStorage.removeItem('up.session');
+    }
+    setSessionState(s);
+  }, []);
 
   // Apply the active theme. Re-runs on theme change, OS scheme change, and whenever the theme
   // registry changes (e.g. a mod registers or removes a theme).
@@ -105,16 +121,53 @@ export function AppProvider({ children }: { children: ReactNode }) {
     void initMods();
   }, []);
 
-  // Initial session check.
+  // Initial session check with graceful recovery for temporary glitches
   useEffect(() => {
     setLanguage(lang);
-    api
-      .session()
-      .then((s) => setSession(s))
-      .catch(() => setSession(null))
-      .finally(() => setSessionReady(true));
+    let active = true;
+    let retryTimer: ReturnType<typeof setTimeout> | null = null;
+
+    const checkSession = async (attempt = 0) => {
+      try {
+        const s = await api.session();
+        if (!active) return;
+        setSession(s);
+        setSessionReady(true);
+      } catch (err: unknown) {
+        if (!active) return;
+        const isTemporary =
+          err instanceof Error &&
+          (err.message === 'network' ||
+            (err as any).status === 0 ||
+            (err as any).status === 502 ||
+            (err as any).status === 503 ||
+            (err as any).status === 504);
+
+        const cached = ls.get('up.session');
+        if (isTemporary && cached && attempt < 3) {
+          // Keep previous session and retry gracefully in background
+          setSessionReady(true);
+          retryTimer = setTimeout(() => {
+            void checkSession(attempt + 1);
+          }, 1500 * (attempt + 1));
+        } else {
+          // Only clear session on definitive auth failure (401/403) or no previous session
+          if (!cached || !isTemporary) {
+            setSession(null);
+          }
+          setSessionReady(true);
+        }
+      }
+    };
+
+    void checkSession();
+
+    return () => {
+      active = false;
+      if (retryTimer) clearTimeout(retryTimer);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [setSession]);
 
   // Notify mods about the session.
   useEffect(() => {
@@ -127,6 +180,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const md = await api.master();
       setMaster(md);
     } catch {
+      // Keep previous master data if available; mark error
+      setMaster((prev) => prev);
       setMasterError('master');
     }
   }, []);
@@ -163,7 +218,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setSession(null);
       setMaster(null);
     }
-  }, []);
+  }, [setSession]);
 
   const role = roleFromSession(session);
 

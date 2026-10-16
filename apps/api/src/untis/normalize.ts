@@ -193,6 +193,20 @@ export function normalizeHoliday(raw: {
   };
 }
 
+export const DEFAULT_TIMEGRID: TimeGridSlot[] = [
+  { name: '0', startMin: 420, endMin: 465 },
+  { name: '1', startMin: 470, endMin: 520 },
+  { name: '2', startMin: 520, endMin: 570 },
+  { name: '3', startMin: 580, endMin: 630 },
+  { name: '4', startMin: 630, endMin: 680 },
+  { name: '5', startMin: 680, endMin: 730 },
+  { name: '6', startMin: 740, endMin: 790 },
+  { name: '7', startMin: 790, endMin: 840 },
+  { name: '8', startMin: 840, endMin: 890 },
+  { name: '9', startMin: 900, endMin: 950 },
+  { name: '10', startMin: 950, endMin: 1000 },
+];
+
 /** Flatten the time grid (Mon..Fri units are typically identical) into slots. */
 export function normalizeTimeGrid(
   raw?: RawMasterData['timeGrid'],
@@ -212,12 +226,15 @@ export function normalizeTimeGrid(
 
   const days = raw?.days ?? [];
   const monday = days.find((d) => d.day === 'MON') ?? days[0];
-  if (!monday) return [];
-  return monday.units.map((u) => ({
-    name: u.label,
-    startMin: untisTimeToMinutes(u.startTime),
-    endMin: untisTimeToMinutes(u.endTime),
-  }));
+  if (monday?.units && monday.units.length > 0) {
+    return monday.units.map((u) => ({
+      name: u.label,
+      startMin: untisTimeToMinutes(u.startTime),
+      endMin: untisTimeToMinutes(u.endTime),
+    }));
+  }
+
+  return DEFAULT_TIMEGRID;
 }
 
 export function normalizeMasterData(raw: RawMasterData): MasterData {
@@ -313,7 +330,7 @@ export function normalizeExam(raw: Record<string, any>): Exam {
     const [h, m] = timePart.split(':').map(Number);
     startMin = (h ?? 0) * 60 + (m ?? 0);
   } else {
-    const dateVal = raw.startDate ?? raw.date;
+    const dateVal = raw.startDate ?? raw.date ?? raw.examDate;
     date = toIsoDateString(dateVal);
     startMin = untisTimeToMinutes(raw.startTime ?? 0);
   }

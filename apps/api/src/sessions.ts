@@ -1,13 +1,16 @@
 import { randomUUID } from 'node:crypto';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import type { AuthMode, MasterData, SessionInfo, SessionSummary } from '@untisplus/shared';
 import { WebUntisClient, type UntisError } from './untis/client.js';
 
 /**
- * In-memory session store.
+ * Session store with disk persistence.
  *
  * A browser never receives WebUntis credentials or the upstream session id — only an opaque
- * token that maps to a server-side `WebUntisClient`. This is intentional: it keeps secrets
- * out of the client and lets us re-authenticate/persist later without changing the API.
+ * token that maps to a server-side `WebUntisClient`. Stored sessions are cached on disk so
+ * server restarts do not disrupt active clients.
  */
 
 export interface StoredSession {
@@ -15,8 +18,17 @@ export interface StoredSession {
   client: WebUntisClient;
   info: SessionInfo;
   mode: AuthMode;
-  /** Credentials kept only in memory so we can renew a session; never persisted or logged. */
+  /** Credentials kept to transparently renew sessions across reloads. */
   credentials?: { user?: string; password?: string; secret?: string };
+  master?: MasterData;
+  masterAt?: number;
+}
+
+export interface SerializedSession {
+  token: string;
+  mode: AuthMode;
+  credentials?: { user?: string; password?: string; secret?: string };
+  info: SessionInfo;
   master?: MasterData;
   masterAt?: number;
 }
@@ -24,6 +36,103 @@ export interface StoredSession {
 const sessions = new Map<string, StoredSession>();
 
 const MASTER_TTL_MS = 5 * 60_000;
+
+export const SESSIONS_CACHE_FILE =
+  process.env.SESSIONS_CACHE_FILE ||
+  path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../.sessions_cache.json');
+
+function setupReauth(session: StoredSession): void {
+  const { client, mode, credentials } = session;
+  client.reauth = async () => {
+    if (mode === 'password' && credentials?.user && credentials?.password) {
+      const ident = await client.loginPassword(credentials.user, credentials.password);
+      session.info.personId = ident.personId;
+      session.info.personType = ident.personType;
+      session.info.klasseId = ident.klasseId;
+      session.info.displayName = ident.displayName;
+      session.info.children = ident.children;
+      client.personId = ident.personId;
+      client.personType = ident.personType;
+      client.klasseId = ident.klasseId;
+      persistSessions();
+    } else if ((mode === 'secret' || mode === 'qr') && credentials?.user && credentials?.secret) {
+      const ident = await client.loginSecret(credentials.user, credentials.secret, mode);
+      session.info.personId = ident.personId;
+      session.info.personType = ident.personType;
+      session.info.klasseId = ident.klasseId;
+      session.info.displayName = ident.displayName;
+      session.info.children = ident.children;
+      client.personId = ident.personId;
+      client.personType = ident.personType;
+      client.klasseId = ident.klasseId;
+      persistSessions();
+    } else if (mode === 'anonymous') {
+      await client.loginAnonymous();
+    }
+  };
+}
+
+export function persistSessions(): void {
+  try {
+    const list: SerializedSession[] = [];
+    for (const s of sessions.values()) {
+      list.push({
+        token: s.token,
+        mode: s.mode,
+        credentials: s.credentials,
+        info: s.info,
+        master: s.master,
+        masterAt: s.masterAt,
+      });
+    }
+    const dir = path.dirname(SESSIONS_CACHE_FILE);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+    fs.writeFileSync(SESSIONS_CACHE_FILE, JSON.stringify(list, null, 2), 'utf8');
+  } catch (err) {
+    console.error('Failed to persist sessions to disk:', err);
+  }
+}
+
+export function loadSessions(): void {
+  try {
+    if (!fs.existsSync(SESSIONS_CACHE_FILE)) return;
+    const content = fs.readFileSync(SESSIONS_CACHE_FILE, 'utf8');
+    if (!content.trim()) return;
+    const list = JSON.parse(content) as SerializedSession[];
+    if (!Array.isArray(list)) return;
+
+    for (const item of list) {
+      if (!item.token || !item.info?.school?.server || !item.info?.school?.loginName) continue;
+      const client = new WebUntisClient({
+        server: item.info.school.server,
+        school: item.info.school.loginName,
+      });
+      client.mode = item.mode;
+      client.personId = item.info.personId;
+      client.personType = item.info.personType;
+      client.klasseId = item.info.klasseId;
+
+      const session: StoredSession = {
+        token: item.token,
+        client,
+        mode: item.mode,
+        credentials: item.credentials,
+        info: item.info,
+        master: item.master,
+        masterAt: item.masterAt,
+      };
+      setupReauth(session);
+      sessions.set(session.token, session);
+    }
+  } catch (err) {
+    console.error('Failed to load sessions from disk:', err);
+  }
+}
+
+// Load cached sessions from disk on module load
+loadSessions();
 
 export interface CreateSessionInput {
   server: string;
@@ -99,28 +208,13 @@ export async function createSession(input: CreateSessionInput): Promise<StoredSe
     },
   };
 
-  // Let the client transparently re-login on session expiry.
-  client.reauth = async () => {
-    if (input.mode === 'password' && input.user && input.password) {
-      const ident = await client.loginPassword(input.user, input.password);
-      session.info.personId = ident.personId;
-      session.info.personType = ident.personType;
-      session.info.klasseId = ident.klasseId;
-      session.info.displayName = ident.displayName;
-      session.info.children = ident.children;
-    } else if ((input.mode === 'secret' || input.mode === 'qr') && input.user && input.secret) {
-      const ident = await client.loginSecret(input.user, input.secret, input.mode);
-      session.info.personId = ident.personId;
-      session.info.personType = ident.personType;
-      session.info.klasseId = ident.klasseId;
-      session.info.displayName = ident.displayName;
-      session.info.children = ident.children;
-    } else if (input.mode === 'anonymous') {
-      await client.loginAnonymous();
-    }
-  };
+  client.personId = personId;
+  client.personType = personType;
+  client.klasseId = klasseId;
+  setupReauth(session);
 
   sessions.set(token, session);
+  persistSessions();
   return session;
 }
 
@@ -137,6 +231,7 @@ export async function getMasterData(session: StoredSession): Promise<MasterData>
   const master = await session.client.getMasterData();
   session.master = master;
   session.masterAt = Date.now();
+  persistSessions();
   return master;
 }
 
@@ -146,6 +241,7 @@ export async function destroySession(token: string | undefined): Promise<void> {
   if (session) {
     await session.client.logout().catch(() => undefined);
     sessions.delete(token);
+    persistSessions();
   }
 }
 

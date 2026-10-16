@@ -101,27 +101,22 @@ export function RoomsView() {
       const isFav = isFavorite('rooms', occ.room.id);
       if (filterMode === 'favorites' && !isFav) return false;
       if (filterMode === 'freeNow') {
-        if (selectedSlotIndex === 'now') {
-          if (!occ.isFreeNow) return false;
-        } else {
-          const slot = occ.slots[selectedSlotIndex];
-          if (slot && slot.occupied) return false;
-        }
+        if (!occ.isFreeNow) return false;
       }
       if (filterMode === 'computer' && occ.category !== 'computer') return false;
       if (filterMode === 'gym' && occ.category !== 'gym') return false;
       if (filterMode === 'special' && occ.category !== 'special') return false;
 
       // Slot-specific filter if a slot is selected
-      if (selectedSlotIndex !== 'now' && filterMode !== 'freeNow') {
+      if (selectedSlotIndex !== 'now') {
         const slot = occ.slots[selectedSlotIndex];
-        if (slot && slot.occupied) return false;
+        if (!slot || slot.occupied) return false;
       }
 
       if (!q) return true;
       return (
         occ.room.name.toLowerCase().includes(q) ||
-        (occ.room.longName && occ.room.longName.toLowerCase().includes(q))
+        Boolean(occ.room.longName && occ.room.longName.toLowerCase().includes(q))
       );
     });
   }, [occupancies, filterMode, selectedSlotIndex, query, customization.favorites]);
@@ -230,7 +225,10 @@ export function RoomsView() {
           <button
             type="button"
             className={`btn small ${filterMode === 'freeNow' ? 'primary' : 'ghost'}`}
-            onClick={() => setFilterMode('freeNow')}
+            onClick={() => {
+              setFilterMode('freeNow');
+              setSelectedSlotIndex('now');
+            }}
           >
             <span>🟢 {t('rooms.filterFreeNow')} ({freeCount})</span>
           </button>

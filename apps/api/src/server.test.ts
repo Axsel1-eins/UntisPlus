@@ -51,6 +51,17 @@ describe('API (fixtures mode)', () => {
     expect(res.headers['set-cookie']).toBeTruthy();
   });
 
+  it('supports /api/session/login as alias for /api/session', async () => {
+    const res = await app.inject({
+      method: 'POST',
+      url: '/api/session/login',
+      payload: { server: 'fixture.webuntis.com', school: 'fixture', mode: 'anonymous' },
+    });
+    expect(res.statusCode).toBe(200);
+    expect(res.json()).toMatchObject({ mode: 'anonymous', readOnly: true });
+    expect(res.headers['set-cookie']).toBeTruthy();
+  });
+
   it('gates the fixtures session on the marker cookie (so onboarding is reachable)', async () => {
     const anon = await app.inject({ method: 'GET', url: '/api/session' });
     expect(anon.statusCode).toBe(401);
@@ -207,6 +218,59 @@ describe('API (fixtures mode)', () => {
     expect(occupancies[0]).toHaveProperty('room');
     expect(occupancies[0]).toHaveProperty('slots');
     expect(occupancies[0]).toHaveProperty('isFreeNow');
+  });
+
+  it('persists sessions to disk and reloads them with reauth intact', async () => {
+    const { createSession, destroySession, getSession, loadSessions, SESSIONS_CACHE_FILE } = await import('./sessions.js');
+    const fs = await import('node:fs');
+
+    // Mock client login to avoid real network call
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = (async () => ({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        result: {
+          sessionId: 'persisted-session-sid',
+          personType: 5,
+          personId: 777,
+          klasseId: 10,
+        },
+      }),
+      headers: { getSetCookie: () => ['JSESSIONID=persisted-session-sid; Path=/'] },
+    })) as unknown as typeof fetch;
+
+    try {
+      const session = await createSession({
+        server: 'test.webuntis.com',
+        school: 'test-school',
+        mode: 'password',
+        user: 'testuser',
+        password: 'testpassword',
+      });
+
+      expect(fs.existsSync(SESSIONS_CACHE_FILE)).toBe(true);
+      const cacheContent = fs.readFileSync(SESSIONS_CACHE_FILE, 'utf8');
+      expect(cacheContent).toContain(session.token);
+      expect(cacheContent).toContain('testuser');
+
+      // Now test reloading: loadSessions reconstructs the WebUntisClient
+      loadSessions();
+      const restored = getSession(session.token);
+      expect(restored).toBeTruthy();
+      expect(restored?.mode).toBe('password');
+      expect(restored?.credentials?.user).toBe('testuser');
+      expect(restored?.info.personId).toBe(777);
+      expect(restored?.client.personId).toBe(777);
+      expect(typeof restored?.client.reauth).toBe('function');
+
+      // Test destroy removes from disk
+      await destroySession(session.token);
+      const afterDestroy = fs.readFileSync(SESSIONS_CACHE_FILE, 'utf8');
+      expect(afterDestroy).not.toContain(session.token);
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
   });
 });
 

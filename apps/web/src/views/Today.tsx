@@ -45,7 +45,7 @@ function formatShortRange(startIso: string, endIso: string, lang: string): strin
 export function TodayView() {
   const { t, i18n } = useTranslation();
   const { role, setTarget, master } = useApp();
-  useCustomization();
+  const customization = useCustomization();
   const now = useNow(30_000);
   const [anchor, setAnchor] = useState(todayIso());
   const [selectedDay, setSelectedDay] = useState(todayIso());
@@ -112,19 +112,30 @@ export function TodayView() {
     };
   }, [master?.holidays, today, t, i18n.language]);
 
-  // Build a timeline that includes free gaps between lessons.
+  // Build a timeline that includes breaks and free gaps between lessons.
   const timeline = useMemo(() => {
-    const items: ({ kind: 'lesson'; lesson: Lesson } | { kind: 'gap'; from: number; to: number })[] = [];
+    const items: (
+      | { kind: 'lesson'; lesson: Lesson }
+      | { kind: 'gap'; from: number; to: number; duration: number; label: string }
+    )[] = [];
+    const minGap = customization.breakMinMinutes ?? 5;
     let cursor: number | undefined;
     for (const lesson of dayLessons) {
-      if (cursor !== undefined && lesson.startMin - cursor >= GAP_MIN) {
-        items.push({ kind: 'gap', from: cursor, to: lesson.startMin });
+      if (cursor !== undefined && lesson.startMin - cursor >= minGap) {
+        const gap = lesson.startMin - cursor;
+        let label = customization.breakShortLabel?.trim() || t('timetable.break');
+        if (gap >= 25) {
+          label = customization.breakLunchLabel?.trim() || t('timetable.lunchBreak');
+        } else if (gap >= 10) {
+          label = customization.breakLongLabel?.trim() || t('timetable.longBreak');
+        }
+        items.push({ kind: 'gap', from: cursor, to: lesson.startMin, duration: gap, label });
       }
       items.push({ kind: 'lesson', lesson });
       cursor = Math.max(cursor ?? 0, lesson.endMin);
     }
     return items;
-  }, [dayLessons]);
+  }, [dayLessons, customization.breakMinMinutes, customization.breakShortLabel, customization.breakLongLabel, customization.breakLunchLabel, t]);
 
   return (
     <div>
@@ -294,7 +305,10 @@ export function TodayView() {
               {timeline.map((item, idx) =>
                 item.kind === 'gap' ? (
                   <div className="free-gap" key={`gap-${idx}`}>
-                    {t('today.free')} {formatTime(item.from)}–{formatTime(item.to)}
+                    <span>
+                      {item.duration >= 25 ? '🍽️ ' : item.duration >= 10 ? '☕ ' : '⏸️ '}
+                      {item.label} ({formatTime(item.from)}–{formatTime(item.to)})
+                    </span>
                   </div>
                 ) : (
                   <LessonCard

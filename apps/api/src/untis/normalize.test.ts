@@ -116,6 +116,14 @@ describe('normalizeTimeGrid', () => {
       { name: '1', startMin: 480, endMin: 530 },
     ]);
   });
+
+  it('supplies default Austrian timegrid when getTimegridUnits and timeGrid are undefined/empty', () => {
+    const grid = normalizeTimeGrid(undefined, undefined);
+    expect(grid).toHaveLength(11);
+    expect(grid[0]).toEqual({ name: '0', startMin: 420, endMin: 465 });
+    expect(grid[1]).toEqual({ name: '1', startMin: 470, endMin: 520 });
+    expect(grid[10]).toEqual({ name: '10', startMin: 950, endMin: 1000 });
+  });
 });
 
 describe('normalizeMasterData', () => {

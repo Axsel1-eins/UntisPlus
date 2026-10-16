@@ -27,6 +27,7 @@ import {
 import { FIXTURE_MASTER, FIXTURE_SCHOOL, fixtureAbsences, fixtureExams, fixtureHomeworks, fixtureLessons, fixtureMessages } from './fixtures.js';
 import { generateICalFeed, getOrCreateCalendarToken } from './calendar.js';
 import { SchoolIndexer } from './untis/school_index.js';
+import { DEFAULT_TIMEGRID } from './untis/normalize.js';
 
 const COOKIE = 'up_session';
 const isFixtures = (): boolean => process.env.FIXTURES === '1';
@@ -114,7 +115,7 @@ export async function createServer(deps: ServerDeps = {}): Promise<FastifyInstan
     secret: z.string().optional(),
   });
 
-  app.post('/api/session', async (req, reply) => {
+  const handleSessionLogin = async (req: any, reply: any) => {
     const input = loginSchema.parse(req.body);
 
     if (
@@ -141,7 +142,10 @@ export async function createServer(deps: ServerDeps = {}): Promise<FastifyInstan
       maxAge: 60 * 60 * 8,
     });
     return summarize(session);
-  });
+  };
+
+  app.post('/api/session', handleSessionLogin);
+  app.post('/api/session/login', handleSessionLogin);
 
   app.get('/api/session', async (req, reply) => {
     if (isReqFixture(req)) {
@@ -329,14 +333,7 @@ export async function createServer(deps: ServerDeps = {}): Promise<FastifyInstan
 
     if (isReqFixture(req)) {
       const list = FIXTURE_MASTER.rooms;
-      const grid = FIXTURE_MASTER.timeGrid && FIXTURE_MASTER.timeGrid.length > 0 ? FIXTURE_MASTER.timeGrid : [
-        { name: '1', startMin: 480, endMin: 530 },
-        { name: '2', startMin: 535, endMin: 585 },
-        { name: '3', startMin: 605, endMin: 655 },
-        { name: '4', startMin: 660, endMin: 710 },
-        { name: '5', startMin: 720, endMin: 770 },
-        { name: '6', startMin: 775, endMin: 825 },
-      ];
+      const grid = FIXTURE_MASTER.timeGrid && FIXTURE_MASTER.timeGrid.length > 0 ? FIXTURE_MASTER.timeGrid : DEFAULT_TIMEGRID;
       const lessons = fixtureLessons(date, date, 1, ElementType.Class);
       return { occupancies: computeRoomOccupancy(list, grid, lessons, currentMin) };
     }
@@ -344,15 +341,19 @@ export async function createServer(deps: ServerDeps = {}): Promise<FastifyInstan
     const session = requireSession(req);
     const master = await getMasterData(session);
     const rooms = master.rooms.length > 0 ? master.rooms : schoolIndexer.getRooms();
-    const grid = master.timeGrid && master.timeGrid.length > 0 ? master.timeGrid : [
-      { name: '1', startMin: 480, endMin: 530 },
-      { name: '2', startMin: 535, endMin: 585 },
-      { name: '3', startMin: 605, endMin: 655 },
-      { name: '4', startMin: 660, endMin: 710 },
-      { name: '5', startMin: 720, endMin: 770 },
-      { name: '6', startMin: 775, endMin: 825 },
-    ];
+    const grid = master.timeGrid && master.timeGrid.length > 0 ? master.timeGrid : DEFAULT_TIMEGRID;
 
+    // 1. Primary: query room timetables directly via WebUntisClient.getRoomOccupancy
+    try {
+      if (rooms.length > 0) {
+        const occupancies = await session.client.getRoomOccupancy(date, rooms, grid, currentMin);
+        return { occupancies };
+      }
+    } catch {
+      // Direct room timetable query blocked; fall back to class timetable harvest
+    }
+
+    // 2. Fallback: harvest class timetables and index room occupancy
     if (!schoolIndexer.isFresh && master.klassen.length > 0) {
       await schoolIndexer.harvest(session.client, master.klassen, { start: date, end: date });
     }

@@ -1,15 +1,21 @@
 import {
+  computeRoomOccupancy,
   dateToInt,
+  ElementType,
+  intToIsoDate,
+  untisTimeToMinutes,
   type Absence,
   type AuthMode,
   type ChildProfile,
-  type ElementType,
   type Exam,
   type Homework,
   type Lesson,
   type MasterData,
   type Message,
+  type Ref,
+  type RoomOccupancy,
   type Substitution,
+  type TimeGridSlot,
   type TimelineTarget,
 } from '@untisplus/shared';
 import { ANONYMOUS_OTP, totp } from './totp.js';
@@ -24,6 +30,25 @@ import {
   type RawMasterData,
   type RawSubstitution,
 } from './normalize.js';
+
+function hashCode(str: string): number {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = ((hash << 5) - hash) + str.charCodeAt(i);
+    hash |= 0;
+  }
+  return hash;
+}
+
+function formatUntisTime(t: number | string | undefined): string | undefined {
+  if (t === undefined || t === null) return undefined;
+  if (typeof t === 'string' && t.includes(':')) return t;
+  const num = Number(t);
+  if (isNaN(num)) return undefined;
+  const h = Math.floor(num / 100);
+  const m = num % 100;
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+}
 
 const IDENTITY = 'UntisPlus/0.1 (+https://github.com/untisplus)';
 
@@ -95,6 +120,9 @@ export class WebUntisClient {
   readonly school: string;
   readonly clientId: string;
   mode: AuthMode = 'anonymous';
+  personId?: number;
+  personType?: number;
+  klasseId?: number;
 
   private sessionId?: string;
   private jwtToken?: string;
@@ -231,6 +259,9 @@ export class WebUntisClient {
     if (!json.result?.sessionId) throw new AuthError('No session id returned');
     this.sessionId = json.result.sessionId;
     this.mode = 'password';
+    this.personId = json.result.personId;
+    this.personType = json.result.personType;
+    this.klasseId = json.result.klasseId;
 
     let children: ChildProfile[] | undefined;
     let displayName: string | undefined;
@@ -279,6 +310,10 @@ export class WebUntisClient {
     this.rawMasterData = json.result?.masterData ?? {};
 
     const ud = (json.result?.userData ?? {}) as Record<string, any>;
+    this.personId = ud.elemId ? Number(ud.elemId) : ud.personId ? Number(ud.personId) : undefined;
+    this.personType = ud.elemType ? Number(ud.elemType) : ud.personType ? Number(ud.personType) : undefined;
+    this.klasseId = ud.klasseId ? Number(ud.klasseId) : undefined;
+
     const childrenRaw = Array.isArray(ud.children) ? ud.children : [];
     const children: ChildProfile[] = childrenRaw.map((c: any) => ({
       id: Number(c.id ?? c.elemId),
@@ -288,9 +323,9 @@ export class WebUntisClient {
 
     return {
       masterData: this.rawMasterData,
-      personId: ud.elemId ? Number(ud.elemId) : ud.personId ? Number(ud.personId) : undefined,
-      personType: ud.elemType ? Number(ud.elemType) : ud.personType ? Number(ud.personType) : undefined,
-      klasseId: ud.klasseId ? Number(ud.klasseId) : undefined,
+      personId: this.personId,
+      personType: this.personType,
+      klasseId: this.klasseId,
       displayName: ud.displayName ?? ud.name,
       children: children.length ? children : undefined,
     };
@@ -427,20 +462,37 @@ export class WebUntisClient {
 
   async getHomeworks(start: string, end: string): Promise<Homework[]> {
     try {
+      const sInt = dateToInt(start);
+      const eInt = dateToInt(end);
       const data = await this.rest<{
         homeworks?: Record<string, any>[];
         lessons?: Record<string, any>[];
         teachers?: Record<string, any>[];
         records?: Record<string, any>[];
       }>('/WebUntis/api/homeworks/lessons', {
-        startDate: dateToInt(start),
-        endDate: dateToInt(end),
+        startDate: sInt,
+        endDate: eInt,
+      }).catch(async () => {
+        const res = await fetch(
+          `${this.base()}/WebUntis/api/homeworks/lessons?startDate=${sInt}&endDate=${eInt}`,
+          {
+            method: 'GET',
+            headers: {
+              Cookie: this.cookies(),
+              'Content-Type': 'application/json',
+              ...(this.jwtToken ? { Authorization: `Bearer ${this.jwtToken}` } : {}),
+            },
+            signal: AbortSignal.timeout(20_000),
+          },
+        );
+        if (!res.ok) return null;
+        return (await res.json()) as any;
       });
 
-      const rawHws = data?.homeworks ?? [];
-      const lessonsList = data?.lessons ?? [];
-      const teachersList = data?.teachers ?? [];
-      const recordsList = data?.records ?? [];
+      const rawHws = (data as any)?.data?.homeworks ?? data?.homeworks ?? [];
+      const lessonsList = (data as any)?.data?.lessons ?? data?.lessons ?? [];
+      const teachersList = (data as any)?.data?.teachers ?? data?.teachers ?? [];
+      const recordsList = (data as any)?.data?.records ?? data?.records ?? [];
 
       const lessonsMap = new Map<number, { id: number; subject?: string }>();
       for (const l of lessonsList) {
@@ -464,7 +516,7 @@ export class WebUntisClient {
         }
       }
 
-      const list = rawHws.map((hw) => {
+      const list = rawHws.map((hw: any) => {
         const enriched = { ...hw };
         if (hw.lessonId && !enriched.subject) {
           const lObj = lessonsMap.get(Number(hw.lessonId));
@@ -487,7 +539,78 @@ export class WebUntisClient {
     }
   }
 
+  private async getClassregAbsences(start: string, end: string): Promise<Absence[] | null> {
+    try {
+      const sInt = dateToInt(start);
+      const eInt = dateToInt(end);
+      const sId = this.personId ?? -1;
+      const url = `${this.base()}/WebUntis/api/classreg/absences/students?startDate=${sInt}&endDate=${eInt}&studentId=${sId}&excuseStatusId=-1`;
+      const res = await fetch(url, {
+        method: 'GET',
+        headers: {
+          Cookie: this.cookies(),
+          'Content-Type': 'application/json',
+          ...(this.jwtToken ? { Authorization: `Bearer ${this.jwtToken}` } : {}),
+        },
+        signal: AbortSignal.timeout(20_000),
+      });
+
+      if (res.status === 401 || res.status === 403) {
+        if (this.reauth) {
+          await this.reauth();
+          return this.getClassregAbsences(start, end);
+        }
+      }
+
+      if (!res.ok) return null;
+      const json = (await res.json()) as any;
+      const list = json?.data?.absences ?? json?.absences;
+      if (!Array.isArray(list)) return null;
+
+      return list.map((raw: any): Absence => {
+        const startDate = raw.startDate ? intToIsoDate(raw.startDate) : start;
+        const endDate = raw.endDate ? intToIsoDate(raw.endDate) : startDate;
+        const startTime = formatUntisTime(raw.startTime);
+        const endTime = formatUntisTime(raw.endTime);
+        const isExcused = Boolean(raw.isExcused || raw.excuseStatus === 'entschuldigt' || raw.excused);
+        const excuseStatus = raw.excuseStatus || (raw.isExcused ? 'entschuldigt' : 'offen');
+        const reason = raw.reason || raw.text || 'Abwesenheit';
+
+        let periods = raw.periods;
+        if (!periods && raw.startTime !== undefined && raw.endTime !== undefined) {
+          const sMin = untisTimeToMinutes(raw.startTime);
+          const eMin = untisTimeToMinutes(raw.endTime);
+          const diff = eMin - sMin;
+          if (diff > 0) {
+            periods = Math.max(1, Math.round(diff / 50));
+          }
+        }
+        if (!periods) periods = 1;
+
+        return {
+          id: String(raw.id),
+          start: startDate,
+          end: endDate,
+          startTime,
+          endTime,
+          excused: isExcused,
+          excuseStatus,
+          reason,
+          text: raw.text,
+          periods,
+        };
+      });
+    } catch {
+      return null;
+    }
+  }
+
   async getAbsences(start: string, end: string): Promise<Absence[]> {
+    // 1. Primary reverse-engineered endpoint on WebUntis
+    const classreg = await this.getClassregAbsences(start, end);
+    if (classreg !== null) return classreg;
+
+    // 2. Fallback to classic JSON-RPC getTimetableWithAbsences
     try {
       const raw = await this.rpc<{ absences?: Record<string, any>[] } | Record<string, any>[]>(
         'getTimetableWithAbsences',
@@ -760,8 +883,16 @@ export class WebUntisClient {
 
     const addExam = (raw: Record<string, any>) => {
       try {
-        const normalized = normalizeExam(raw);
-        const key = `${normalized.id || 0}|${normalized.date}|${normalized.startMin}|${normalized.subject?.id || normalized.subject?.name || ''}`;
+        const name = raw.name ?? raw.examName ?? raw.subject?.name ?? raw.subject ?? '';
+        const examDate = raw.examDate ?? raw.date ?? raw.startDate ?? '';
+        const startTime = raw.startTime ?? '';
+        const stableId =
+          raw.id && raw.id !== 0
+            ? Number(raw.id)
+            : Math.abs(hashCode(`${name}|${examDate}|${startTime}`)) || 1;
+
+        const normalized = normalizeExam({ ...raw, id: stableId });
+        const key = `${normalized.id}|${normalized.date}|${normalized.startMin}|${normalized.subject?.id || normalized.subject?.name || ''}`;
         if (!seen.has(key)) {
           seen.add(key);
           allExams.push(normalized);
@@ -771,33 +902,61 @@ export class WebUntisClient {
       }
     };
 
-    // 1. Modern REST endpoint with date parameters
+    // 1. Primary reverse-engineered endpoint /WebUntis/api/exams with klasseId & withGrades
     try {
-      const v1Data = await this.rest<{ exams?: Record<string, any>[] }>('/WebUntis/api/rest/view/v1/exams', {
+      const kId = this.klasseId ?? -1;
+      const legacyRest = await this.rest<{ exams?: Record<string, any>[] }>('/WebUntis/api/exams', {
         startDate: sInt,
         endDate: eInt,
+        klasseId: kId,
+        withGrades: 'true',
+      }).catch(async () => {
+        const res = await fetch(
+          `${this.base()}/WebUntis/api/exams?startDate=${sInt}&endDate=${eInt}&klasseId=${kId}&withGrades=true`,
+          {
+            method: 'GET',
+            headers: {
+              Cookie: this.cookies(),
+              'Content-Type': 'application/json',
+              ...(this.jwtToken ? { Authorization: `Bearer ${this.jwtToken}` } : {}),
+            },
+            signal: AbortSignal.timeout(20_000),
+          },
+        );
+        if (!res.ok) return null;
+        return (await res.json()) as { exams?: Record<string, any>[] };
       });
-      if (Array.isArray(v1Data?.exams)) {
-        for (const ex of v1Data.exams) {
-          const d = Number(ex.startDate ?? ex.date ?? 0);
-          if (!d || (d >= sInt && d <= eInt)) {
-            addExam(ex);
+
+      const rawExams = (legacyRest as any)?.data?.exams ?? legacyRest?.exams;
+      if (Array.isArray(rawExams)) {
+        for (const ex of rawExams) {
+          // If this.personId is set, filter: keep exams where assignedStudents is empty OR contains this.personId
+          if (this.personId && Array.isArray(ex.assignedStudents) && ex.assignedStudents.length > 0) {
+            const isAssigned = ex.assignedStudents.some(
+              (s: any) => Number(s.id ?? s.studentId ?? s) === this.personId,
+            );
+            if (!isAssigned) continue;
           }
+          addExam(ex);
         }
       }
     } catch {
       // Continue to next source
     }
 
-    // 2. Legacy REST endpoint /WebUntis/api/exams
+    // 2. Modern REST endpoint /WebUntis/api/rest/view/v1/exams
     try {
-      const legacyRest = await this.rest<{ exams?: Record<string, any>[] }>('/WebUntis/api/exams', {
+      const v1Data = await this.rest<{ exams?: Record<string, any>[] }>('/WebUntis/api/rest/view/v1/exams', {
         startDate: sInt,
         endDate: eInt,
       });
-      if (Array.isArray(legacyRest?.exams)) {
-        for (const ex of legacyRest.exams) {
-          addExam(ex);
+      const v1Exams = (v1Data as any)?.data?.exams ?? v1Data?.exams;
+      if (Array.isArray(v1Exams)) {
+        for (const ex of v1Exams) {
+          const d = Number(ex.startDate ?? ex.date ?? 0);
+          if (!d || (d >= sInt && d <= eInt)) {
+            addExam(ex);
+          }
         }
       }
     } catch {
@@ -822,6 +981,47 @@ export class WebUntisClient {
     }
 
     return allExams.sort((a, b) => a.date.localeCompare(b.date) || a.startMin - b.startMin);
+  }
+
+  /** Query room timetable occupancy across rooms for a requested date */
+  async getRoomOccupancy(
+    date: string,
+    rooms: Ref[],
+    timeGrid: TimeGridSlot[],
+    currentMin?: number,
+  ): Promise<RoomOccupancy[]> {
+    const cMin = currentMin ?? (new Date().getHours() * 60 + new Date().getMinutes());
+    const allLessons: Lesson[] = [];
+    let permissionDenied = false;
+
+    const chunkSize = 10;
+    for (let i = 0; i < rooms.length; i += chunkSize) {
+      if (permissionDenied) break;
+      const chunk = rooms.slice(i, i + chunkSize);
+      const results = await Promise.allSettled(
+        chunk.map((r) => this.getTimetable({ id: r.id, type: ElementType.Room }, date, date)),
+      );
+      for (const res of results) {
+        if (res.status === 'fulfilled') {
+          allLessons.push(...res.value);
+        } else {
+          const err = res.reason;
+          if (
+            err instanceof PermissionError ||
+            (err instanceof UntisError && (err.code === -8509 || /no right/i.test(err.message)))
+          ) {
+            permissionDenied = true;
+            break;
+          }
+        }
+      }
+    }
+
+    if (permissionDenied) {
+      throw new PermissionError('Room timetable direct access blocked');
+    }
+
+    return computeRoomOccupancy(rooms, timeGrid, allLessons, cMin);
   }
 
   async getMessages(date: string): Promise<Message[]> {

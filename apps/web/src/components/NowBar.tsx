@@ -9,9 +9,8 @@ interface Props {
 }
 
 /**
- * The persistent "what's happening now / next" strip. For teachers this is the key feature:
- * it always shows the current period and the next room, so moving between rooms needs no
- * navigation.
+ * The persistent "what's happening now / next" strip. For teachers and students this is the key feature:
+ * it always shows the current period, remaining minutes countdown, and the next upcoming room/lesson.
  */
 export function NowBar({ lessons, now }: Props) {
   const { t } = useTranslation();
@@ -19,6 +18,7 @@ export function NowBar({ lessons, now }: Props) {
   const next = current ? undefined : nextAnyLesson(lessons, now);
   const lesson = current ?? next;
 
+  const currentMin = now.getHours() * 60 + now.getMinutes();
   const clock = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
 
   if (!lesson) {
@@ -34,6 +34,15 @@ export function NowBar({ lessons, now }: Props) {
   }
 
   const isCurrent = Boolean(current);
+  const minsLeft = isCurrent ? lesson.endMin - currentMin : lesson.startMin - currentMin;
+
+  // If in a current lesson, find next upcoming lesson
+  const nextUpcoming = isCurrent
+    ? lessons
+        .filter((l) => l.date === lesson.date && l.startMin >= lesson.endMin && l.id !== lesson.id)
+        .sort((a, b) => a.startMin - b.startMin)[0]
+    : undefined;
+
   return (
     <div className="nowbar">
       <div className="col" style={{ gap: 0, alignItems: 'center' }}>
@@ -43,13 +52,29 @@ export function NowBar({ lessons, now }: Props) {
         </span>
       </div>
       <div className="what" style={{ flex: 1 }}>
-        <div className="t">
-          {subjectLabel(lesson)}
-          {lesson.rooms.length > 0 && ` · ${names(lesson.rooms)}`}
+        <div className="t" style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+          <span>
+            {subjectLabel(lesson)}
+            {lesson.rooms.length > 0 && ` · ${names(lesson.rooms)}`}
+          </span>
+          {minsLeft > 0 && (
+            <span
+              className={`badge small ${isCurrent ? 'ok' : 'subst'}`}
+              style={{ fontSize: 11, padding: '1px 6px', fontWeight: 700 }}
+            >
+              {isCurrent ? `noch ${minsLeft} Min.` : `in ${minsLeft} Min.`}
+            </span>
+          )}
         </div>
         <div className="s">
           {lesson.klassen.length > 0 && `${names(lesson.klassen)} · `}
           {minutesToTime(lesson.startMin)}–{minutesToTime(lesson.endMin)}
+          {nextUpcoming && (
+            <span style={{ marginLeft: 6, opacity: 0.85 }}>
+              · {t('today.next') || 'Danach'}: {subjectLabel(nextUpcoming)}
+              {nextUpcoming.rooms.length > 0 && ` (${names(nextUpcoming.rooms)})`}
+            </span>
+          )}
         </div>
       </div>
     </div>

@@ -167,9 +167,9 @@ export function SubstitutionsView() {
                   </span>
                 </h2>
                 <div className="day-list">
-                  {list.map(({ lesson, kind }) => (
+                  {list.map(({ lesson, kind }, idx) => (
                     <SubCard
-                      key={lesson.id}
+                      key={`${lesson.id}-${idx}`}
                       lesson={lesson}
                       kind={kind}
                       role={role}
@@ -231,9 +231,9 @@ export function SubstitutionsView() {
             <EmptyState icon="check" title={`Keine Vertretungen am ${dowShort(selectedDay, i18n.language)} 🎉`} />
           ) : (
             <div className="day-list">
-              {dayItems.map(({ lesson, kind }) => (
+              {dayItems.map(({ lesson, kind }, idx) => (
                 <SubCard
-                  key={lesson.id}
+                  key={`${lesson.id}-${idx}`}
                   lesson={lesson}
                   kind={kind}
                   role={role}
@@ -267,6 +267,7 @@ function SubCard({
   const subj = primarySubject(lesson);
   const color = subjectColor(subj?.id, subj?.name);
   const isCancelled = lesson.status === 'CANCELLED';
+  const note = lesson.substText || lesson.info || lesson.substitution?.text;
 
   return (
     <button
@@ -301,10 +302,10 @@ function SubCard({
             </span>
           )}
         </div>
-        {lesson.substText && (
+        {note && (
           <div className={`subst-highlight-box ${isCancelled ? 'danger' : 'warn'}`}>
             <Icon name={isCancelled ? 'alert' : 'refresh'} size={13} />
-            <span>{lesson.substText}</span>
+            <span>{note}</span>
           </div>
         )}
       </div>

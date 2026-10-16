@@ -1,6 +1,6 @@
 import { useMemo, useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { addDays, type Absence } from '@untisplus/shared';
+import { addDays, minutesToTime, type Absence } from '@untisplus/shared';
 import { api } from '../api.js';
 import { useModule } from '../data.js';
 import { formatDay, todayIso } from '../lib.js';
@@ -54,10 +54,13 @@ interface UnifiedAbsence {
   isPersonal: boolean;
   start: string;
   end: string;
+  startTime?: string | number;
+  endTime?: string | number;
   periods: number;
   excused: boolean;
   excuseStatus: string;
   reason: string;
+  text?: string;
   subjectName?: string;
   hasAttest?: boolean;
   notes?: string;
@@ -108,17 +111,26 @@ export function AbsencesView() {
 
   // Combine WebUntis items + Personal items
   const unifiedItems: UnifiedAbsence[] = useMemo(() => {
-    const webList: UnifiedAbsence[] = (mod.items || []).map((w) => ({
-      id: `wu-${w.id}`,
-      isPersonal: false,
-      start: w.start,
-      end: w.end,
-      periods: w.periods ?? 1,
-      excused: Boolean(w.excused),
-      excuseStatus: w.excused ? t('absences.excused') : w.excuseStatus ?? t('absences.pending'),
-      reason: w.reason && w.reason !== '—' ? w.reason : t('absences.unspecifiedReason'),
-      subjectName: w.subject?.name,
-    }));
+    const webList: UnifiedAbsence[] = (mod.items || []).map((w: any) => {
+      const reasonVal = w.reason && w.reason !== '—' ? w.reason : (w.text || t('absences.unspecifiedReason'));
+      const textVal = w.text && w.text !== w.reason && w.text !== '—' ? w.text : undefined;
+      return {
+        id: `wu-${w.id}`,
+        isPersonal: false,
+        start: w.start,
+        end: w.end,
+        startTime: w.startTime ?? w.startTimeStr ?? w.startMin,
+        endTime: w.endTime ?? w.endTimeStr ?? w.endMin,
+        periods: w.periods ?? 1,
+        excused: Boolean(w.excused),
+        excuseStatus: w.excused
+          ? (w.excuseStatus && /entsch/i.test(w.excuseStatus) ? w.excuseStatus : t('absences.excused'))
+          : (w.excuseStatus ?? t('absences.pending')),
+        reason: reasonVal,
+        text: textVal,
+        subjectName: w.subject?.name,
+      };
+    });
 
     const persList: UnifiedAbsence[] = personalItems.map((p) => ({
       id: p.id,
@@ -134,6 +146,7 @@ export function AbsencesView() {
             ? t('absences.statusSubmitted')
             : t('absences.statusOpen'),
       reason: p.reason,
+      text: p.notes,
       subjectName: p.subjectName,
       hasAttest: p.hasAttest,
       notes: p.notes,
@@ -170,7 +183,9 @@ export function AbsencesView() {
   const totalPeriods = unifiedItems.reduce((acc, i) => acc + (i.periods || 0), 0);
   const openAbsences = unifiedItems.filter((i) => !i.excused);
   const openPeriods = openAbsences.reduce((acc, i) => acc + (i.periods || 0), 0);
+  const excusedAbsences = unifiedItems.filter((i) => i.excused);
   const excusedPeriods = totalPeriods - openPeriods;
+  const excusedCount = excusedAbsences.length;
 
   // 5-Day Legal Deadline Watchdog (§ 45 SchUG)
   const urgentDeadlineItems = useMemo(() => {
@@ -204,6 +219,15 @@ export function AbsencesView() {
     return a.start === a.end
       ? formatDay(a.start, i18n.language)
       : `${formatDay(a.start, i18n.language)} – ${formatDay(a.end, i18n.language)}`;
+  }
+
+  function timeRange(a: UnifiedAbsence): string | null {
+    if (a.startTime !== undefined && a.endTime !== undefined) {
+      const s = typeof a.startTime === 'number' ? minutesToTime(a.startTime) : String(a.startTime);
+      const e = typeof a.endTime === 'number' ? minutesToTime(a.endTime) : String(a.endTime);
+      return `${s}–${e}`;
+    }
+    return null;
   }
 
   function handleAddPersonal(entry: Omit<PersonalAbsence, 'id' | 'createdAt'>) {
@@ -328,9 +352,11 @@ export function AbsencesView() {
         </div>
         <div className="card stat">
           <div className="n" style={{ color: 'var(--ok)' }}>
-            {excusedPeriods}
+            {excusedCount}
           </div>
-          <div className="l">{t('absences.excused')}</div>
+          <div className="l">
+            {i18n.language === 'de' ? 'entschuldigte Fehlzeiten' : t('absences.excused')}
+          </div>
         </div>
         <div className="card stat">
           <div className="n">{unifiedItems.length}</div>
@@ -438,11 +464,16 @@ export function AbsencesView() {
                   </div>
                   <div className="spacer" />
                   <span className={`badge ${a.excused ? 'ok' : 'irregular'}`}>
-                    {a.excuseStatus}
+                    {a.excused ? (a.excuseStatus || t('absences.excused')) : (a.excuseStatus || t('absences.pending'))}
                   </span>
                 </div>
 
-                <div className="item-meta" style={{ marginTop: 6 }}>
+                <div className="item-meta" style={{ marginTop: 6, flexWrap: 'wrap', gap: '6px 12px' }}>
+                  {timeRange(a) && (
+                    <span>
+                      <Icon name="clock" size={13} /> {timeRange(a)}
+                    </span>
+                  )}
                   <span>
                     <Icon name="clock" size={13} /> {a.periods} {t('absences.periods')}
                   </span>
@@ -453,7 +484,7 @@ export function AbsencesView() {
                   )}
                   {a.reason && (
                     <span>
-                      <Icon name="alert" size={13} /> {t('absences.reason')}: {a.reason}
+                      <Icon name="alert" size={13} /> {t('absences.reason')}: <strong>{a.reason}</strong>
                     </span>
                   )}
                   {a.hasAttest && (
@@ -463,7 +494,12 @@ export function AbsencesView() {
                   )}
                 </div>
 
-                {a.notes && (
+                {a.text && a.text !== a.reason && (
+                  <div className="small muted" style={{ marginTop: 4, fontStyle: 'italic' }}>
+                    "{a.text}"
+                  </div>
+                )}
+                {a.notes && a.notes !== a.text && (
                   <div className="small muted" style={{ marginTop: 4, fontStyle: 'italic' }}>
                     "{a.notes}"
                   </div>

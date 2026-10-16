@@ -121,12 +121,13 @@ export function TimetableView() {
     if (customization.cancellationStyle === 'hidden') {
       list = list.filter((l) => l.status !== 'CANCELLED');
     }
-    if (customization.substDisplayMode === 'subst-only') {
+    const substMode = customization.substDisplayMode ?? 'both';
+    if (substMode === 'subst-only') {
       const hasActive = list.some((l) => l.status !== 'CANCELLED');
       if (hasActive) {
         list = list.filter((l) => l.status !== 'CANCELLED');
       }
-    } else if (customization.substDisplayMode === 'cancelled-only') {
+    } else if (substMode === 'cancelled-only') {
       list = list.filter((l) => l.status === 'CANCELLED');
     }
     return list;
@@ -141,27 +142,58 @@ export function TimetableView() {
     const timeGrid = master?.timeGrid;
     const periods: Array<{ name: string; startMin: number; endMin: number }> = [];
 
+    // Collect all slots from timeGrid or derive from lessons
+    const sorted: Array<{ name?: string; startMin: number; endMin: number }> = [];
     if (timeGrid && timeGrid.length > 0) {
-      const sorted = [...timeGrid].sort((a, b) => a.startMin - b.startMin);
+      sorted.push(...[...timeGrid].sort((a, b) => a.startMin - b.startMin));
+    }
 
+    // Ensure any afternoon/evening lessons (e.g. Monday lessons running up to 16:40 / Period 10)
+    // that extend beyond or aren't covered by timeGrid are included in sorted slots!
+    if (lessons.length > 0) {
+      const maxLessonEnd = Math.max(...lessons.map((l) => l.endMin));
+      const lastSlotEnd = sorted.length > 0 ? sorted[sorted.length - 1]!.endMin : 0;
+      if (maxLessonEnd > lastSlotEnd || sorted.length === 0) {
+        const uncovered = lessons.filter(
+          (l) => l.endMin > lastSlotEnd && !sorted.some((s) => Math.abs(s.startMin - l.startMin) <= 15),
+        );
+        const distinctStarts = [...new Set(uncovered.map((l) => l.startMin))].sort((a, b) => a - b);
+        for (const start of distinctStarts) {
+          const matching = uncovered.filter((l) => l.startMin === start);
+          const end = matching.length > 0 ? Math.max(...matching.map((l) => l.endMin)) : start + 50;
+          sorted.push({
+            name: `${sorted.length + 1}`,
+            startMin: start,
+            endMin: end,
+          });
+        }
+        sorted.sort((a, b) => a.startMin - b.startMin);
+      }
+    }
+
+    if (sorted.length > 0) {
       // Determine cutoff: if trimEmptyPeriods is enabled, don't show trailing empty evening periods
+      // but ensure active school hours (up to 16:40 or latest lesson end) are NOT cut off prematurely!
       let maxAllowedStart = Infinity;
       if (customization.trimEmptyPeriods !== false && lessons.length > 0) {
         const latestLessonEnd = Math.max(...lessons.map((l) => l.endMin));
-        // Find the slot that ends at or after latestLessonEnd (or latest lesson start)
-        const activeSlots = sorted.filter((s) => s.startMin < latestLessonEnd);
+        const latestLessonStart = Math.max(...lessons.map((l) => l.startMin));
+        // Keep any slot that contains, overlaps, or starts before/at latest lesson
+        const activeSlots = sorted.filter(
+          (s) => s.startMin <= latestLessonStart || s.startMin < latestLessonEnd || s.endMin <= latestLessonEnd,
+        );
         if (activeSlots.length > 0) {
           const lastActive = activeSlots[activeSlots.length - 1]!;
           maxAllowedStart = lastActive.startMin;
         }
       }
 
-      sorted.forEach((slot: TimeGridSlot, idx: number) => {
+      sorted.forEach((slot, idx) => {
         if (slot.startMin > maxAllowedStart) return;
         // Respect explicit slot names from WebUntis (e.g. "0", "1", "2"...)
-        const hasName = slot.name !== undefined && slot.name !== null && slot.name.trim() !== '';
+        const hasName = slot.name !== undefined && slot.name !== null && String(slot.name).trim() !== '';
         // If slot starts before 07:45 or has name "0", it represents period 0
-        const name = hasName ? slot.name.trim() : (slot.startMin < 465 ? '0' : `${idx + 1}`);
+        const name = hasName ? String(slot.name).trim() : (slot.startMin < 465 ? '0' : `${idx + 1}`);
         periods.push({ name, startMin: slot.startMin, endMin: slot.endMin });
       });
     } else {
@@ -245,17 +277,31 @@ export function TimetableView() {
       }
       let slotStart = l.startMin;
       if (basePeriods.length > 0) {
+        // 1. Exact startMin match
         const exact = basePeriods.find((p) => p.startMin === l.startMin);
         if (exact) {
           slotStart = exact.startMin;
         } else {
-          const inside = basePeriods.find((p) => l.startMin >= p.startMin && l.startMin < p.endMin);
-          if (inside) {
-            slotStart = inside.startMin;
-          } else {
-            const close = basePeriods.find((p) => Math.abs(p.startMin - l.startMin) <= 15);
-            if (close) {
-              slotStart = close.startMin;
+          // 2. Score candidate periods based on overlap and start proximity
+          // (e.g. 07:50 -> Period 1 at 08:00, 08:40 -> Period 2 at 08:50, 09:40 -> Period 3 at 09:55)
+          let bestPeriod: PeriodRow | { startMin: number; endMin: number } | null = null;
+          let bestScore = -Infinity;
+
+          for (const p of basePeriods) {
+            const startDiff = Math.abs(p.startMin - l.startMin);
+            const overlap = Math.max(0, Math.min(l.endMin, p.endMin) - Math.max(l.startMin, p.startMin));
+            const score = overlap * 2 - startDiff;
+            if (score > bestScore) {
+              bestScore = score;
+              bestPeriod = p;
+            }
+          }
+
+          if (bestPeriod) {
+            const startDiff = Math.abs(bestPeriod.startMin - l.startMin);
+            const overlap = Math.max(0, Math.min(l.endMin, bestPeriod.endMin) - Math.max(l.startMin, bestPeriod.startMin));
+            if (startDiff <= 30 || overlap >= 15) {
+              slotStart = bestPeriod.startMin;
             }
           }
         }
@@ -797,12 +843,13 @@ function PeriodRowView({
         const rawList = map.get(`${day}|${row.startMin}`) ?? [];
 
         let filtered = [...rawList];
-        if (customization.substDisplayMode === 'subst-only') {
+        const substMode = customization.substDisplayMode ?? 'both';
+        if (substMode === 'subst-only') {
           const hasActive = filtered.some((l) => l.status !== 'CANCELLED');
           if (hasActive) {
             filtered = filtered.filter((l) => l.status !== 'CANCELLED');
           }
-        } else if (customization.substDisplayMode === 'cancelled-only') {
+        } else if (substMode === 'cancelled-only') {
           filtered = filtered.filter((l) => l.status === 'CANCELLED');
         }
 

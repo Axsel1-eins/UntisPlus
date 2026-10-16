@@ -13,6 +13,8 @@ Anmelde Daten.md
 "Anmelde Daten.md"
 dist-mobile/
 .system_generated/
+.sessions_cache.json
+.data/
 
 # AI & Agent artifacts
 .aider*

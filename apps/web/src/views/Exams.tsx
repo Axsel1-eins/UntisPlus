@@ -109,20 +109,25 @@ export function ExamsView() {
       combined.map((e) => `${e.date}|${e.startMin}|${e.subject?.id ?? e.subject?.name ?? ''}`),
     );
 
+    let synthIdx = 1;
     for (const l of lessons) {
-      if (l.status === 'EXAM') {
+      if (l.status === 'EXAM' || l.isExam) {
         const subj = primarySubject(l);
         const key = `${l.date}|${l.startMin}|${subj?.id ?? subj?.name ?? ''}`;
         if (!seen.has(key)) {
           seen.add(key);
+          const hashId =
+            Math.abs(
+              (l.id || `${l.date}-${l.startMin}`).split('').reduce((acc, c) => ((acc << 5) - acc + c.charCodeAt(0)) | 0, 0),
+            ) || 90000 + synthIdx++;
           combined.push({
-            id: parseInt(l.id, 10) || 90000 + Math.abs(l.startMin),
+            id: hashId,
             date: l.date,
             startMin: l.startMin,
             endMin: l.endMin,
             subject: subj,
-            teachers: l.teachers,
-            rooms: l.rooms,
+            teachers: l.teachers ?? [],
+            rooms: l.rooms ?? [],
             type: 'Schularbeit / Prüfung',
             text: l.info || l.substText || (subj ? `Prüfung in ${subj.name}` : 'Prüfung'),
           });
@@ -342,16 +347,17 @@ export function ExamsView() {
 
           {!mod.loading && !mod.error && mod.available && items.length > 0 && (
             <div className="day-list">
-              {items.map((e) => {
+              {items.map((e, idx) => {
                 const color = subjectColor(e.subject?.id, e.subject?.name);
                 const diff = daysDiff(e.date, today);
                 const isExpanded = expandedExamId === e.id;
                 const prep = prepMap[e.id] ?? { notes: '', checklist: [] };
                 const checkedCount = prep.checklist.filter((i) => i.done).length;
+                const examKey = e.id ? `${e.id}-${e.date}-${idx}` : `${e.date}-${e.startMin}-${idx}`;
 
                 return (
                   <div
-                    key={e.id}
+                    key={examKey}
                     className="item"
                     style={{
                       ['--subj' as string]: color,
@@ -412,12 +418,12 @@ export function ExamsView() {
                         {e.text && <div className="item-text">{e.text}</div>}
 
                         <div className="item-meta">
-                          {e.teachers.length > 0 && (
+                          {(e.teachers ?? []).length > 0 && (
                             <span>
                               <Icon name="user" size={13} /> {names(e.teachers)}
                             </span>
                           )}
-                          {e.rooms.length > 0 && (
+                          {(e.rooms ?? []).length > 0 && (
                             <span>
                               <Icon name="mapPin" size={13} /> {names(e.rooms)}
                             </span>
