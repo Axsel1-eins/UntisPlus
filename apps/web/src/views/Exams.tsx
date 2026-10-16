@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { addDays, minutesToTime, type Exam } from '@untisplus/shared';
+import { addDays, deduplicateExams, minutesToTime, type Exam } from '@untisplus/shared';
 import { api } from '../api.js';
 import { useModule, useWeekLessons } from '../data.js';
 import { useApp } from '../store.js';
@@ -148,38 +148,31 @@ export function ExamsView() {
   }, [grades]);
 
   const items = useMemo(() => {
-    const combined: Exam[] = [...mod.items];
-    const seen = new Set<string>(
-      combined.map((e) => `${e.date}|${e.startMin}|${e.subject?.id ?? e.subject?.name ?? ''}`),
-    );
+    const rawList: Exam[] = [...mod.items];
 
     let synthIdx = 1;
     for (const l of lessons) {
       if (l.status === 'EXAM' || l.isExam) {
         const subj = primarySubject(l);
-        const key = `${l.date}|${l.startMin}|${subj?.id ?? subj?.name ?? ''}`;
-        if (!seen.has(key)) {
-          seen.add(key);
-          const hashId =
-            Math.abs(
-              (l.id || `${l.date}-${l.startMin}`).split('').reduce((acc, c) => ((acc << 5) - acc + c.charCodeAt(0)) | 0, 0),
-            ) || 90000 + synthIdx++;
-          combined.push({
-            id: hashId,
-            date: l.date,
-            startMin: l.startMin,
-            endMin: l.endMin,
-            subject: subj,
-            teachers: l.teachers ?? [],
-            rooms: l.rooms ?? [],
-            type: 'Schularbeit / Prüfung',
-            text: l.info || l.substText || (subj ? `Prüfung in ${subj.name}` : 'Prüfung'),
-          });
-        }
+        const hashId =
+          Math.abs(
+            (l.id || `${l.date}-${l.startMin}`).split('').reduce((acc, c) => ((acc << 5) - acc + c.charCodeAt(0)) | 0, 0),
+          ) || 90000 + synthIdx++;
+        rawList.push({
+          id: hashId,
+          date: l.date,
+          startMin: l.startMin,
+          endMin: l.endMin,
+          subject: subj,
+          teachers: l.teachers ?? [],
+          rooms: l.rooms ?? [],
+          type: 'Schularbeit / Prüfung',
+          text: l.info || l.substText || (subj ? `Prüfung in ${subj.name}` : 'Prüfung'),
+        });
       }
     }
 
-    const list = combined.sort((a, b) => a.date.localeCompare(b.date) || a.startMin - b.startMin);
+    const list = deduplicateExams(rawList);
     if (examScope === 'upcoming') {
       return list.filter((e) => e.date >= today);
     }

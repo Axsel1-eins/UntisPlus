@@ -36,6 +36,7 @@ export function InstallModal({ onClose }: InstallModalProps) {
         onClick={(e) => e.stopPropagation()}
         style={{ maxWidth: 540, width: '100%', maxHeight: '90dvh', overflowY: 'auto' }}
       >
+        <div className="sheet-handle show-on-mobile" />
         <div className="row" style={{ justifyContent: 'space-between', marginBottom: 12 }}>
           <div className="row" style={{ gap: 8 }}>
             <span style={{ fontSize: 24 }}>📱</span>

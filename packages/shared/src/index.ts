@@ -5,3 +5,4 @@ export * from './theme.js';
 export * from './mod.js';
 export * from './ical.js';
 export * from './rooms.js';
+export * from './exams.js';

@@ -1,5 +1,6 @@
 import type { Exam, Holiday, Lesson } from './types.js';
 import { addDays } from './dates.js';
+import { deduplicateExams } from './exams.js';
 
 export type CalendarScope = 'all' | 'timetable' | 'exams' | 'holidays';
 
@@ -169,7 +170,8 @@ export function buildICalendar(options: ICalendarOptions): string {
   }
 
   if (includeExams) {
-    for (const exam of exams) {
+    const cleanExams = deduplicateExams(exams);
+    for (const exam of cleanExams) {
       const roomNames = exam.rooms.map((r) => r.name).join(', ');
       const teacherNames = exam.teachers.map((t) => t.name).join(', ');
       const subjName = exam.subject?.name || exam.subject?.longName || '';

@@ -22,7 +22,12 @@ export function SubstitutionsView() {
   const { t, i18n } = useTranslation();
   const { role, setTarget } = useApp();
   const [anchor, setAnchor] = useState<string>(todayIso());
-  const [viewMode, setViewMode] = useState<'week' | 'day'>('week');
+  const [viewMode, setViewMode] = useState<'week' | 'day'>(() => {
+    if (typeof window !== 'undefined' && window.innerWidth < 640) {
+      return 'day';
+    }
+    return 'week';
+  });
   const [selectedDayIndex, setSelectedDayIndex] = useState<number>(() => {
     const dow = new Date().getDay();
     return dow === 0 || dow === 6 ? 0 : dow - 1;
@@ -196,15 +201,18 @@ export function SubstitutionsView() {
                   type="button"
                   className="btn sm"
                   onClick={() => setSelectedDayIndex(i)}
-                  style={
-                    isActive
+                  style={{
+                    flex: '1 1 0',
+                    minWidth: 0,
+                    padding: '6px 2px',
+                    ...(isActive
                       ? {
                           background: 'var(--accent)',
                           borderColor: 'var(--accent)',
                           color: 'var(--accent-ink)',
                         }
-                      : undefined
-                  }
+                      : {}),
+                  }}
                 >
                   <span>
                     {dowShort(day, i18n.language)} {Number(day.slice(-2))}

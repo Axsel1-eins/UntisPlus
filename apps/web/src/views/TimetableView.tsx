@@ -71,7 +71,12 @@ export function TimetableView() {
   } = customization;
 
   const [anchor, setAnchor] = useState(todayIso());
-  const [mode, setMode] = useState<Mode>('week');
+  const [mode, setMode] = useState<Mode>(() => {
+    if (typeof window !== 'undefined' && window.innerWidth < 640) {
+      return 'day';
+    }
+    return 'week';
+  });
   const [dayIndex, setDayIndex] = useState(() => {
     const dow = new Date().getDay();
     return dow === 0 || dow === 6 ? 0 : dow - 1;
@@ -645,11 +650,14 @@ export function TimetableView() {
                   key={day}
                   className="btn sm"
                   onClick={() => setDayIndex(i)}
-                  style={
-                    i === dayIndex
+                  style={{
+                    flex: '1 1 0',
+                    minWidth: 0,
+                    padding: '6px 2px',
+                    ...(i === dayIndex
                       ? { background: 'var(--accent)', borderColor: 'var(--accent)', color: 'var(--accent-ink)' }
-                      : undefined
-                  }
+                      : {}),
+                  }}
                 >
                   {dowShort(day, i18n.language)} {Number(day.slice(-2))}
                   {dayHoliday && (

@@ -1,4 +1,4 @@
-import { useMemo, type ReactNode } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useApp } from '../store.js';
 import { navigate, useRouteInfo, type Route } from '../router.js';
@@ -28,6 +28,17 @@ export const NAV_DEFS: Record<Route, { icon: string; key: string }> = {
 const DESKTOP_PRIMARY: Route[] = ['today', 'timetable', 'subs', 'exams', 'homework', 'rooms'];
 const DESKTOP_SECONDARY: Route[] = ['customize', 'settings'];
 
+const MORE_MODULES: { route: Route; icon: string; titleKey: string; hintKey: string }[] = [
+  { route: 'exams', icon: 'gradCap', titleKey: 'modules.exams', hintKey: 'exams.subtitle' },
+  { route: 'homework', icon: 'clipboard', titleKey: 'modules.homework', hintKey: 'homework.subtitle' },
+  { route: 'absences', icon: 'calendarX', titleKey: 'modules.absences', hintKey: 'absences.subtitle' },
+  { route: 'rooms', icon: 'grid', titleKey: 'modules.rooms', hintKey: 'rooms.subtitle' },
+  { route: 'messages', icon: 'mail', titleKey: 'modules.messages', hintKey: 'messages.subtitle' },
+  { route: 'theme-studio', icon: 'palette', titleKey: 'themeStudio.title', hintKey: 'themeStudio.tileHint' },
+  { route: 'customize', icon: 'sliders', titleKey: 'customize.title', hintKey: 'customize.subtitle' },
+  { route: 'settings', icon: 'more', titleKey: 'settings.title', hintKey: 'settings.account' },
+];
+
 export function AppShell({ children }: { children: ReactNode }) {
   const { t } = useTranslation();
   const { route, param } = useRouteInfo();
@@ -37,6 +48,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const online = useOnlineStatus();
   useModsVersion();
   const toasts = useToasts();
+  const [moreOpen, setMoreOpen] = useState(false);
 
   const navPosition = customization.navPosition ?? 'sidebar-left';
   const navSize = customization.navSize ?? 'normal';
@@ -45,6 +57,15 @@ export function AppShell({ children }: { children: ReactNode }) {
   // Mod contributions that asked for a slot in the main navigation.
   const modNav = getNavItems().filter((n) => n.placement === 'nav');
   const activeNav = navItems && navItems.length > 0 ? navItems : (['today', 'timetable', 'subs', 'settings'] as Route[]);
+
+  const mobileTabs: Route[] = useMemo(() => {
+    if (navItems && navItems.length > 0) {
+      return navItems.filter((r) => r !== 'settings').slice(0, 4);
+    }
+    return ['today', 'timetable', 'subs', 'exams'];
+  }, [navItems]);
+
+  const isMoreActive = !mobileTabs.includes(route);
 
   const allPrimaryRoutes: Route[] = useMemo(() => {
     const list = [...DESKTOP_PRIMARY];
@@ -81,8 +102,10 @@ export function AppShell({ children }: { children: ReactNode }) {
       className={`app nav-pos-${navPosition} nav-size-${navSize} ${isSidebar ? 'with-sidebar' : ''}`.trim()}
     >
       <header className="appbar">
-        {/* Render brand in top bar only if NOT a sidebar layout or explicitly requested */}
-        {(!isSidebar || logoPosition === 'center') && Brand}
+        {/* Brand logo: visible in appbar on mobile & top navbar, hidden when desktop sidebar is shown */}
+        <div className="brand-appbar">
+          {Brand}
+        </div>
 
         <div className="spacer" />
 
@@ -123,7 +146,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
         {allPrimaryRoutes.map((r) => {
           const item = NAV_DEFS[r] ?? NAV_DEFS.today;
-          const isMobileVisible = activeNav.includes(r);
+          const isMobileVisible = mobileTabs.includes(r);
           return (
             <a
               key={r}
@@ -133,6 +156,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               title={navSize === 'compact' ? t(item.key) : undefined}
               onClick={(e) => {
                 e.preventDefault();
+                setMoreOpen(false);
                 navigate(r);
               }}
             >
@@ -153,7 +177,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
         {DESKTOP_SECONDARY.map((r) => {
           const item = NAV_DEFS[r] ?? NAV_DEFS.settings;
-          const isMobileVisible = activeNav.includes(r);
+          const isMobileVisible = mobileTabs.includes(r);
           return (
             <a
               key={r}
@@ -163,6 +187,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               title={navSize === 'compact' ? t(item.key) : undefined}
               onClick={(e) => {
                 e.preventDefault();
+                setMoreOpen(false);
                 navigate(r);
               }}
             >
@@ -174,8 +199,169 @@ export function AppShell({ children }: { children: ReactNode }) {
           );
         })}
 
+        {/* Mobile More (Mehr) button in bottom navigation */}
+        <button
+          type="button"
+          className={`nav-link show-on-mobile ${moreOpen || isMoreActive ? 'active' : ''}`}
+          aria-current={moreOpen || isMoreActive ? 'page' : undefined}
+          onClick={() => setMoreOpen((v) => !v)}
+          title={t('nav.settings')}
+        >
+          <span className="ico">
+            <Icon name="more" size={21} />
+          </span>
+          <span>{t('nav.settings')}</span>
+        </button>
+
         {modNavItems(modNav, route, param, navigate, navSize !== 'compact')}
       </nav>
+
+      {/* Mobile More Sheet */}
+      {moreOpen && (
+        <div className="dialog-backdrop" onClick={() => setMoreOpen(false)} role="presentation">
+          <div
+            className="dialog card pad mobile-more-sheet"
+            role="dialog"
+            aria-modal="true"
+            aria-label={t('nav.settings')}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="sheet-handle show-on-mobile" />
+
+            <div className="row" style={{ marginBottom: 14, alignItems: 'center' }}>
+              <div className="row" style={{ gap: 8, alignItems: 'center', minWidth: 0 }}>
+                <span
+                  className="logo"
+                  style={{
+                    width: 28,
+                    height: 28,
+                    borderRadius: 8,
+                    display: 'grid',
+                    placeItems: 'center',
+                    color: '#fff',
+                    background: 'linear-gradient(180deg, #6366f1, #8b5cf6)',
+                    fontWeight: 900,
+                    fontSize: 15,
+                  }}
+                >
+                  U
+                </span>
+                <div className="col" style={{ gap: 1, minWidth: 0 }}>
+                  <div style={{ fontWeight: 800, fontSize: 15, lineHeight: 1.2 }}>
+                    {session?.displayName || t('app.name')}
+                  </div>
+                  <div className="small muted nowrap">
+                    {session ? session.school.displayName : (role === 'teacher' ? t('settings.roleTeacher') : t('settings.roleStudent'))}
+                  </div>
+                </div>
+              </div>
+              <div className="spacer" />
+              <button
+                type="button"
+                className={`chip ${privacyMode ? 'accent' : ''}`}
+                style={{
+                  cursor: 'pointer',
+                  border: 'none',
+                  background: privacyMode ? 'var(--accent)' : 'var(--surface-2)',
+                  padding: '6px 10px',
+                }}
+                title={privacyMode ? t('customize.privacyOn') : t('customize.privacyOff')}
+                onClick={() => updateCustomization({ privacyMode: !privacyMode })}
+              >
+                <Icon name={privacyMode ? 'eyeOff' : 'eye'} size={15} />
+              </button>
+              <button
+                type="button"
+                className="btn ghost icon sm"
+                onClick={() => setMoreOpen(false)}
+                aria-label={t('common.close')}
+              >
+                <Icon name="close" size={17} />
+              </button>
+            </div>
+
+            <div className="section" style={{ marginTop: 0 }}>
+              <h2
+                style={{
+                  fontSize: 12,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em',
+                  color: 'var(--muted)',
+                  fontWeight: 700,
+                  marginBottom: 8,
+                }}
+              >
+                {t('modules.title')}
+              </h2>
+              <div className="mobile-more-grid">
+                {MORE_MODULES.map((m) => {
+                  const active = route === m.route;
+                  return (
+                    <button
+                      key={m.route}
+                      type="button"
+                      className={`mobile-more-card ${active ? 'active' : ''}`}
+                      onClick={() => {
+                        navigate(m.route);
+                        setMoreOpen(false);
+                      }}
+                    >
+                      <div className="mm-icon">
+                        <Icon name={m.icon} size={19} />
+                      </div>
+                      <div className="col" style={{ gap: 1, minWidth: 0 }}>
+                        <div className="mm-title nowrap">{t(m.titleKey)}</div>
+                        <div className="mm-desc nowrap">{t(m.hintKey)}</div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {modNav.length > 0 && (
+              <div className="section" style={{ marginTop: 14 }}>
+                <h2
+                  style={{
+                    fontSize: 12,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em',
+                    color: 'var(--muted)',
+                    fontWeight: 700,
+                    marginBottom: 8,
+                  }}
+                >
+                  {t('mods.title')}
+                </h2>
+                <div className="mobile-more-grid">
+                  {modNav.map((m) => {
+                    const active = route === 'x' && param === m.id;
+                    return (
+                      <button
+                        key={m.id}
+                        type="button"
+                        className={`mobile-more-card ${active ? 'active' : ''}`}
+                        onClick={() => {
+                          navigate('x', m.id);
+                          setMoreOpen(false);
+                        }}
+                      >
+                        <div className="mm-icon">
+                          <Icon name={m.icon ?? 'puzzle'} size={19} />
+                        </div>
+                        <div className="col" style={{ gap: 1, minWidth: 0 }}>
+                          <div className="mm-title nowrap">{m.label}</div>
+                          <div className="mm-desc nowrap">{t('mods.fromMod')}</div>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       <main className="main">
         {recentChanges.length > 0 && (

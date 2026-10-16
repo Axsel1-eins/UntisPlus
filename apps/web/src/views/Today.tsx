@@ -212,8 +212,11 @@ export function TodayView() {
                 onClick={() => setSelectedDay(day)}
                 style={{
                   flexDirection: 'column',
-                  minWidth: 52,
-                  minHeight: 56,
+                  flex: '1 1 0',
+                  minWidth: 0,
+                  maxWidth: 68,
+                  minHeight: 54,
+                  padding: '4px 2px',
                   gap: 0,
                   background: active ? 'var(--accent)' : 'var(--surface)',
                   borderColor: active ? 'var(--accent)' : 'var(--border)',

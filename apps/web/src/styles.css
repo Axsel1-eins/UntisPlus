@@ -930,7 +930,8 @@ label.field {
   border-top: 1px solid var(--border);
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
-.nav a {
+.nav a,
+.nav button.nav-link {
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -940,13 +941,32 @@ label.field {
   color: var(--muted);
   font-size: 11px;
   font-weight: 650;
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+  transition: transform 0.08s ease, color 0.15s ease;
 }
-.nav a[aria-current='page'] {
+.nav a:active,
+.nav button.nav-link:active {
+  transform: scale(0.92);
+}
+.nav a[aria-current='page'],
+.nav button.nav-link[aria-current='page'],
+.nav button.nav-link.active {
   color: var(--accent);
 }
-.nav a .ico {
+.nav a .ico,
+.nav button.nav-link .ico {
   font-size: 19px;
   line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 .nav-link {
   position: relative;
@@ -968,7 +988,9 @@ label.field {
   color: var(--accent-ink);
 }
 @media (max-width: 899px) {
-  .nav-link.desktop-only {
+  .nav-link.desktop-only,
+  .nav-divider.desktop-only,
+  .nav-header.desktop-only {
     display: none !important;
   }
   .nav a .nav-pill {

@@ -1,6 +1,7 @@
 import {
   computeRoomOccupancy,
   dateToInt,
+  deduplicateExams,
   ElementType,
   intToIsoDate,
   untisTimeToMinutes,
@@ -980,7 +981,7 @@ export class WebUntisClient {
       }
     }
 
-    return allExams.sort((a, b) => a.date.localeCompare(b.date) || a.startMin - b.startMin);
+    return deduplicateExams(allExams);
   }
 
   /** Query room timetable occupancy across rooms for a requested date */
