@@ -12,8 +12,7 @@ npm run build
 
 # Sync web assets to Capacitor Android project
 echo "🔄 Syncing Capacitor Android assets..."
-cd "$REPO_ROOT/apps/web"
-npx cap sync android
+npm --prefix "$REPO_ROOT/apps/web" run cap:sync android
 
 # Ensure local.properties exists
 ANDROID_DIR="$REPO_ROOT/apps/web/android"

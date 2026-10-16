@@ -37,7 +37,7 @@ jobs:
         run: npm run build
 
       - name: Sync Capacitor Android
-        run: npm run cap:sync -w @untisplus/web -- android
+        run: npm run cap:sync:android
 
       - name: Grant execute permission for gradlew
         working-directory: apps/web/android
@@ -83,7 +83,7 @@ jobs:
         run: npm run build
 
       - name: Sync Capacitor iOS
-        run: npm run cap:sync -w @untisplus/web -- ios
+        run: npm run cap:sync:ios
 
       - name: Build Xcode Project (Unsigned)
         working-directory: apps/web/ios/App
@@ -102,7 +102,12 @@ jobs:
         working-directory: apps/web/ios/App
         run: |
           mkdir -p build/Payload
-          cp -r build/Build/Products/Debug-iphoneos/App.app build/Payload/
+          APP_PATH=$(find build -name "App.app" -type d | head -n 1)
+          if [ -z "$APP_PATH" ]; then
+            APP_PATH=$(find build -name "*.app" -type d | head -n 1)
+          fi
+          echo "Found compiled app at: $APP_PATH"
+          cp -r "$APP_PATH" build/Payload/
           cd build && zip -r UntisPlus-Debug.ipa Payload
 
       - name: Upload iOS IPA Artifact
