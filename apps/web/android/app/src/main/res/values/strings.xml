@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Untis⁺</string>
+    <string name="title_activity_main">Untis⁺</string>
+    <string name="package_name">com.untisplus.app</string>
+    <string name="custom_url_scheme">com.untisplus.app</string>
+</resources>

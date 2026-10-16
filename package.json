@@ -1,0 +1,30 @@
+{
+  "name": "untisplus",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Untis⁺ — The modern, modular WebUntis client (PWA + API proxy)",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "build": "npm run build --workspaces --if-present",
+    "dev:api": "npm run dev -w @untisplus/api",
+    "dev:web": "npm run dev -w @untisplus/web",
+    "build:apk": "./scripts/build-apk.sh",
+    "cap:sync": "npm run cap:sync -w @untisplus/web"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.3"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "allowScripts": {
+    "esbuild@0.28.2": true,
+    "esbuild@0.21.5": true
+  }
+}
