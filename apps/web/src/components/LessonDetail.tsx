@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   ElementType,
+  getExamTypeBadge,
   minutesToTime,
   type Exam,
   type Homework,
@@ -328,27 +329,87 @@ export function LessonDetail({
         <div
           className="card pad col"
           style={{
-            gap: 8,
-            background: 'color-mix(in srgb, var(--warn) 10%, var(--surface))',
+            gap: 10,
+            background: 'color-mix(in srgb, var(--warn) 12%, var(--surface))',
             borderColor: 'var(--warn)',
             borderRadius: 'var(--radius-sm)',
           }}
         >
-          <div className="tiny uppercase" style={{ fontWeight: 800, color: 'var(--warn)' }}>
-            🎓 {t('today.exam')} ({linkedExams.length})
-          </div>
-          {linkedExams.map((ex) => (
-            <div key={ex.id} className="col" style={{ gap: 2 }}>
-              <div style={{ fontWeight: 750, fontSize: 14 }}>
-                {ex.subject?.name || ex.type || 'Prüfung'}
-              </div>
-              {ex.text && <div className="small muted">{ex.text}</div>}
-              <div className="tiny muted">
-                {minutesToTime(ex.startMin)} – {minutesToTime(ex.endMin)}
-                {ex.rooms.length > 0 && ` · Raum: ${ex.rooms.map((r) => r.name).join(', ')}`}
-              </div>
+          <div className="row wrap" style={{ gap: 8, alignItems: 'center', justifyContent: 'space-between' }}>
+            <div className="tiny uppercase" style={{ fontWeight: 800, color: 'var(--warn)', display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span>🎓</span>
+              <span>{t('today.exam')} ({linkedExams.length})</span>
             </div>
-          ))}
+            {lesson.date && (
+              <span className="tiny muted">{formatDay(lesson.date, i18n.language)}</span>
+            )}
+          </div>
+          {linkedExams.map((ex) => {
+            const badge = getExamTypeBadge(ex.type);
+            const exSubj = ex.subject || subj;
+            const exColor = subjectColor(exSubj?.id, exSubj?.name);
+            return (
+              <div
+                key={ex.id}
+                className="card pad col"
+                style={{
+                  gap: 6,
+                  background: 'var(--surface)',
+                  borderRadius: 'var(--radius-sm)',
+                  borderLeft: `4px solid ${badge.color}`,
+                }}
+              >
+                <div className="row wrap" style={{ gap: 8, alignItems: 'center' }}>
+                  <span
+                    className="badge"
+                    style={{
+                      background: badge.color,
+                      color: '#ffffff',
+                      fontWeight: 800,
+                      fontSize: 11,
+                      padding: '2px 8px',
+                      borderRadius: 'var(--radius-sm)',
+                    }}
+                  >
+                    {badge.icon} {badge.label}
+                  </span>
+                  {exSubj && (
+                    <span
+                      style={{
+                        fontWeight: 750,
+                        fontSize: 14,
+                        color: exColor,
+                      }}
+                    >
+                      {exSubj.name}
+                      {exSubj.longName && exSubj.longName !== exSubj.name && (
+                        <span className="small muted"> · {exSubj.longName}</span>
+                      )}
+                    </span>
+                  )}
+                  <div className="spacer" />
+                  <span className="tiny muted" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                    ⏱️ {minutesToTime(ex.startMin)} – {minutesToTime(ex.endMin)}
+                  </span>
+                </div>
+                {ex.text && (
+                  <div style={{ fontSize: 13, color: 'var(--text)', opacity: 0.9 }}>
+                    {ex.text}
+                  </div>
+                )}
+                {ex.rooms.length > 0 && (
+                  <div className="tiny muted">
+                    🏛️ Raum: {ex.rooms.map((r) => r.name).join(', ')}
+                  </div>
+                )}
+                {ex.teachers.length > 0 && (
+                  <div className="tiny muted">
+                    👨‍🏫 Lehrkraft: {ex.teachers.map((t) => t.name).join(', ')}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
 

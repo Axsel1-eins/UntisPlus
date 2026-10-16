@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { addDays, deduplicateExams, minutesToTime, type Exam } from '@untisplus/shared';
+import { addDays, deduplicateExams, getExamTypeBadge, minutesToTime, type Exam } from '@untisplus/shared';
 import { api } from '../api.js';
 import { useModule, useWeekLessons } from '../data.js';
 import { useApp } from '../store.js';
@@ -9,49 +9,8 @@ import { EmptyState, ErrorState, Icon, Segmented } from '../components/primitive
 import { ListSkeleton, ModuleHeader, ModuleUnavailable, PageSubtitle } from '../components/module-ui.js';
 import { CalendarExportModal } from '../components/CalendarExportModal.js';
 
-export function getExamTypeBadge(rawType?: string): { label: string; color: string; icon: string } {
-  const norm = (rawType ?? '').trim().toUpperCase();
-  if (norm.startsWith('SA') || norm.includes('SCHULARBEIT')) {
-    return {
-      label: rawType && !rawType.startsWith('SA_') ? rawType : 'Schularbeit',
-      color: '#ef4444',
-      icon: '📝',
-    };
-  }
-  if (norm.includes('ABGABE') || norm.includes('PROJEKT')) {
-    return {
-      label: rawType || 'Abgabe',
-      color: '#0284c7',
-      icon: '📦',
-    };
-  }
-  if (norm.includes('PLF') || norm.includes('PRAKTISCH')) {
-    return {
-      label: rawType === 'PLF' ? 'PLF (Praktisch)' : (rawType || 'PLF (Praktisch)'),
-      color: '#8b5cf6',
-      icon: '🛠️',
-    };
-  }
-  if (norm.includes('SMÜ') || norm.includes('MÜNDLICH') || norm.includes('MITARBEIT')) {
-    return {
-      label: rawType || 'Mündlich / SMÜ',
-      color: '#10b981',
-      icon: '🗣️',
-    };
-  }
-  if (norm.includes('TEST') || norm.includes('FACHPRÜFUNG')) {
-    return {
-      label: rawType || 'Test',
-      color: '#f59e0b',
-      icon: '⏱️',
-    };
-  }
-  return {
-    label: rawType || 'Prüfung',
-    color: '#6366f1',
-    icon: '🎓',
-  };
-}
+export { getExamTypeBadge };
+
 
 interface ExamPrepData {
   notes: string;

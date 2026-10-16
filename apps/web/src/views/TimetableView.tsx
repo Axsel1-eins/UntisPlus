@@ -3,8 +3,10 @@ import { useTranslation } from 'react-i18next';
 import {
   ElementType,
   addDays,
+  deduplicateExams,
   formatCalendarWeek,
   getCalendarWeek,
+  isExamForLesson,
   minutesToTime,
   mondayOf,
   type Exam,
@@ -98,20 +100,26 @@ export function TimetableView() {
     [weekStart],
   );
 
+  const cleanExams = useMemo(() => deduplicateExams(examsMod.items), [examsMod.items]);
+
   const detailExams = useMemo(() => {
     if (!detail) return [];
-    const subj = primarySubject(detail);
-    return examsMod.items.filter(
-      (e) => e.date === detail.date || (subj && e.subject?.id === subj.id),
-    );
-  }, [detail, examsMod.items]);
+    return cleanExams.filter((e) => isExamForLesson(detail, e));
+  }, [detail, cleanExams]);
 
   const detailHomework = useMemo(() => {
     if (!detail) return [];
     const subj = primarySubject(detail);
-    return hwMod.items.filter(
-      (h) => (h.dueDate === detail.date || h.date === detail.date) && (!subj || h.subject?.id === subj.id),
-    );
+    const sName = (subj?.name || '').trim().toUpperCase();
+    return hwMod.items.filter((h) => {
+      const isDue = h.dueDate === detail.date || h.date === detail.date;
+      if (!isDue) return false;
+      if (!subj) return true;
+      if (h.subject?.id && subj.id && h.subject.id === subj.id) return true;
+      const hName = (h.subject?.name || '').trim().toUpperCase();
+      if (hName && sName && (hName === sName || hName.includes(sName) || sName.includes(hName))) return true;
+      return false;
+    });
   }, [detail, hwMod.items]);
 
   const daysCount = showWeekend ? 7 : 5;
@@ -629,7 +637,7 @@ export function TimetableView() {
                     showPeriodTimes={showPeriodTimes}
                     showRoomInWeek={showRoomInWeek}
                     showTeacherInWeek={showTeacherInWeek}
-                    exams={examsMod.items}
+                    exams={cleanExams}
                     homework={hwMod.items}
                   />
                 );
@@ -882,27 +890,16 @@ function PeriodRowView({
           const isCancelled = l.status === 'CANCELLED';
           const isIrregular = l.status === 'IRREGULAR' || Boolean(l.substText && !isCancelled);
           const hasInfo = Boolean(l.info || l.substText);
-          const hasExam =
-            l.status === 'EXAM' ||
-            exams.some(
-              (e) =>
-                e.date === l.date &&
-                (!subj ||
-                  (e.subject?.id && subj.id && e.subject.id === subj.id) ||
-                  (e.subject?.name &&
-                    subj.name &&
-                    e.subject.name.trim().toUpperCase() === subj.name.trim().toUpperCase())),
-            );
-          const hasHw =
-            homework.some(
-              (h) =>
-                (h.dueDate === l.date || h.date === l.date) &&
-                (!subj ||
-                  (h.subject?.id && subj.id && h.subject.id === subj.id) ||
-                  (h.subject?.name &&
-                    subj.name &&
-                    h.subject.name.trim().toUpperCase() === subj.name.trim().toUpperCase())),
-            );
+          const hasExam = l.status === 'EXAM' || l.isExam || exams.some((e) => isExamForLesson(l, e));
+          const sName = (subj?.name || '').trim().toUpperCase();
+          const hasHw = homework.some((h) => {
+            const isDue = h.dueDate === l.date || h.date === l.date;
+            if (!isDue) return false;
+            if (h.subject?.id && subj?.id && h.subject.id === subj.id) return true;
+            const hName = (h.subject?.name || '').trim().toUpperCase();
+            if (hName && sName && (hName === sName || hName.includes(sName) || sName.includes(hName))) return true;
+            return false;
+          });
           const examHighlightClass = hasExam
             ? `has-exam exam-${customization.examHighlight ?? 'pulse-glow'}`
             : '';

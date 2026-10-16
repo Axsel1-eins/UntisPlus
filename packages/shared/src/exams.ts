@@ -1,4 +1,59 @@
-import type { Exam, Ref } from './types.js';
+import type { Exam, Lesson, Ref } from './types.js';
+
+export interface ExamTypeBadge {
+  label: string;
+  color: string;
+  icon: string;
+}
+
+/**
+ * Returns a standardized badge configuration with distinctive color and emoji icon
+ * based on exam type classification.
+ */
+export function getExamTypeBadge(rawType?: string): ExamTypeBadge {
+  const norm = (rawType ?? '').trim().toUpperCase();
+  if (norm.startsWith('SA') || norm.includes('SCHULARBEIT')) {
+    return {
+      label: rawType && !rawType.startsWith('SA_') ? rawType : 'Schularbeit',
+      color: '#ef4444',
+      icon: '📝',
+    };
+  }
+  if (norm.includes('ABGABE') || norm.includes('PROJEKT')) {
+    return {
+      label: rawType || 'Abgabe',
+      color: '#0284c7',
+      icon: '📦',
+    };
+  }
+  if (norm.includes('PLF') || norm.includes('PRAKTISCH')) {
+    return {
+      label: rawType === 'PLF' ? 'PLF (Praktisch)' : (rawType || 'PLF (Praktisch)'),
+      color: '#8b5cf6',
+      icon: '🛠️',
+    };
+  }
+  if (norm.includes('SMÜ') || norm.includes('MÜNDLICH') || norm.includes('MITARBEIT')) {
+    return {
+      label: rawType || 'Mündlich / SMÜ',
+      color: '#10b981',
+      icon: '🗣️',
+    };
+  }
+  if (norm.includes('TEST') || norm.includes('FACHPRÜFUNG')) {
+    return {
+      label: rawType || 'Test',
+      color: '#f59e0b',
+      icon: '⏱️',
+    };
+  }
+  return {
+    label: rawType || 'Prüfung',
+    color: '#6366f1',
+    icon: '🎓',
+  };
+}
+
 
 /**
  * Checks if two exams refer to the exact same test occurring on the same day
@@ -152,4 +207,87 @@ export function deduplicateExams(exams: Exam[]): Exam[] {
   }
 
   return result.sort((a, b) => a.date.localeCompare(b.date) || a.startMin - b.startMin);
+}
+
+/**
+ * Checks whether an exam belongs to a specific lesson.
+ * Matches strictly on the same date, overlapping time window (or matching period start),
+ * and corresponding subject, teacher, or room.
+ */
+export function isExamForLesson(lesson: Lesson, exam: Exam): boolean {
+  // 1. Strict date match: an exam can NEVER belong to a lesson on a different day
+  if (exam.date !== lesson.date) return false;
+
+  // 2. Strict time match:
+  // Lessons in WebUntis are typically 45-50 minutes.
+  // Overlap must be significant (>= 20 minutes) or start times within 15 minutes.
+  const overlap = Math.max(0, Math.min(lesson.endMin, exam.endMin) - Math.max(lesson.startMin, exam.startMin));
+  const startDiff = Math.abs(lesson.startMin - exam.startMin);
+  const isTimeMatch = overlap >= 20 || startDiff <= 15;
+  if (!isTimeMatch) return false;
+
+  // 3. Subject / Teacher / Room match
+  const lessonSubjs = lesson.subjects ?? [];
+  const eSubjName = (exam.subject?.name || '').trim().toUpperCase();
+  const eSubjLong = (exam.subject?.longName || '').trim().toUpperCase();
+  const eSubjId = exam.subject?.id;
+  const eText = (exam.text || '').trim().toUpperCase();
+  const eType = (exam.type || '').trim().toUpperCase();
+
+  const hasLessonSubj = lessonSubjs.length > 0;
+  const hasExamSubj = Boolean(eSubjName || (eSubjId && eSubjId > 0));
+
+  if (hasLessonSubj) {
+    const hasSubjectMatch = lessonSubjs.some((s) => {
+      if (eSubjId && s.id && eSubjId === s.id && eSubjId > 0) return true;
+      const sName = (s.name || '').trim().toUpperCase();
+      const sLong = (s.longName || '').trim().toUpperCase();
+      if (!sName) return false;
+
+      // Exact name match
+      if (eSubjName && sName === eSubjName) return true;
+
+      // Base name match (e.g. M-1 vs M, AM vs AM_1, NW2 vs NW)
+      const baseLesson = sName.replace(/[-_0-9].*$/, '').trim() || sName;
+      const baseExam = eSubjName.replace(/[-_0-9].*$/, '').trim() || eSubjName;
+      if (baseLesson.length >= 2 && baseExam.length >= 2 && baseLesson === baseExam) return true;
+
+      // Long name / full title match
+      if (sLong && eSubjLong && (sLong === eSubjLong || sLong.includes(eSubjLong) || eSubjLong.includes(sLong))) return true;
+      if (sLong && eSubjName && (sLong.includes(eSubjName) || eSubjName.includes(sLong))) return true;
+      if (sName && eSubjLong && (eSubjLong.includes(sName) || sName.includes(eSubjLong))) return true;
+
+      // Exam text or type explicitly mentions this lesson's subject code or name
+      if (eText && (eText.includes(sName) || (baseLesson.length >= 2 && eText.includes(baseLesson)))) return true;
+      if (eType && (eType.includes(sName) || (baseLesson.length >= 2 && eType.includes(baseLesson)))) return true;
+
+      return false;
+    });
+
+    if (hasSubjectMatch) return true;
+
+    // If both lesson and exam explicitly declare subjects, but they do NOT match,
+    // they are definitely different subjects! Do NOT fall back to shared room/teacher.
+    if (hasExamSubj) {
+      return false;
+    }
+  }
+
+  // Fallback when subject is missing from lesson or exam:
+  // Check shared teacher
+  const sharedTeacher = lesson.teachers?.some((t1) =>
+    exam.teachers?.some(
+      (t2) =>
+        (t1.id && t2.id && t1.id === t2.id && t1.id > 0) ||
+        (t1.name && t2.name && t1.name.trim().toUpperCase() === t2.name.trim().toUpperCase()),
+    ),
+  );
+  if (sharedTeacher) return true;
+
+  // If lesson status is EXAM or isExam, and we have time match, and exam has no conflicting subject
+  if ((lesson.status === 'EXAM' || lesson.isExam) && !hasExamSubj) {
+    return true;
+  }
+
+  return false;
 }

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import type { Exam } from './types.js';
-import { areExamsDuplicate, deduplicateExams, mergeExams } from './exams.js';
+import type { Exam, Lesson } from './types.js';
+import { areExamsDuplicate, deduplicateExams, isExamForLesson, mergeExams } from './exams.js';
 
 describe('Exam deduplication and merging', () => {
   const examA: Exam = {
@@ -95,5 +95,90 @@ describe('Exam deduplication and merging', () => {
     expect(deduplicated.some((e) => e.subject?.name === 'AM' && e.date === '2026-10-20')).toBe(true);
     expect(deduplicated.some((e) => e.subject?.name === 'NW2' && e.date === '2026-10-20')).toBe(true);
     expect(deduplicated.some((e) => e.subject?.name === 'AM' && e.date === '2026-10-21')).toBe(true);
+  });
+
+  describe('isExamForLesson', () => {
+    const lessonMathPeriod1: Lesson = {
+      id: '2026-10-20-480-1-10',
+      date: '2026-10-20',
+      startMin: 470, // 07:50 - 08:40 (Period 1)
+      endMin: 520,
+      subjects: [{ id: 1, name: 'AM', longName: 'Angewandte Mathematik' }],
+      teachers: [{ id: 1, name: 'MÜL' }],
+      rooms: [{ id: 10, name: 'R101' }],
+      klassen: [{ id: 100, name: '3BHIF' }],
+      status: 'REGULAR',
+    };
+
+    const lessonGermanPeriod2: Lesson = {
+      id: '2026-10-20-520-2-10',
+      date: '2026-10-20',
+      startMin: 520, // 08:40 - 09:30 (Period 2)
+      endMin: 570,
+      subjects: [{ id: 2, name: 'D', longName: 'Deutsch' }],
+      teachers: [{ id: 5, name: 'HUB' }],
+      rooms: [{ id: 10, name: 'R101' }],
+      klassen: [{ id: 100, name: '3BHIF' }],
+      status: 'REGULAR',
+    };
+
+    const lessonMathPeriod6: Lesson = {
+      id: '2026-10-20-740-1-10',
+      date: '2026-10-20',
+      startMin: 740, // 12:20 - 13:10 (Period 6)
+      endMin: 790,
+      subjects: [{ id: 1, name: 'AM', longName: 'Angewandte Mathematik' }],
+      teachers: [{ id: 1, name: 'MÜL' }],
+      rooms: [{ id: 10, name: 'R101' }],
+      klassen: [{ id: 100, name: '3BHIF' }],
+      status: 'REGULAR',
+    };
+
+    const lessonMathNextWeek: Lesson = {
+      id: '2026-10-27-480-1-10',
+      date: '2026-10-27',
+      startMin: 470,
+      endMin: 520,
+      subjects: [{ id: 1, name: 'AM', longName: 'Angewandte Mathematik' }],
+      teachers: [{ id: 1, name: 'MÜL' }],
+      rooms: [{ id: 10, name: 'R101' }],
+      klassen: [{ id: 100, name: '3BHIF' }],
+      status: 'REGULAR',
+    };
+
+    it('matches an exam taking place during that exact lesson period', () => {
+      // examA is AM on 2026-10-20 at 08:00-08:50 (Period 1)
+      expect(isExamForLesson(lessonMathPeriod1, examA)).toBe(true);
+    });
+
+    it('NEVER matches an exam on the same day when scheduled at a different hour', () => {
+      // German lesson at 08:40 should NOT link to Math exam at 08:00
+      expect(isExamForLesson(lessonGermanPeriod2, examA)).toBe(false);
+
+      // Afternoon Math lesson at 12:20 should NOT link to Morning Math exam at 08:00
+      expect(isExamForLesson(lessonMathPeriod6, examA)).toBe(false);
+    });
+
+    it('NEVER matches an exam on a different date even if subject and hour match', () => {
+      // Lesson on 2026-10-27 should NOT link to exam on 2026-10-20
+      expect(isExamForLesson(lessonMathNextWeek, examA)).toBe(false);
+    });
+
+    it('matches an afternoon exam only to the afternoon lesson of that subject', () => {
+      // examB is NW2 at 12:20-13:10
+      const lessonNW2Period6: Lesson = {
+        id: '2026-10-20-740-99-10',
+        date: '2026-10-20',
+        startMin: 740,
+        endMin: 790,
+        subjects: [{ id: 99, name: 'NW2' }],
+        teachers: [{ id: 3, name: 'HUB' }],
+        rooms: [],
+        klassen: [],
+        status: 'REGULAR',
+      };
+      expect(isExamForLesson(lessonNW2Period6, examB)).toBe(true);
+      expect(isExamForLesson(lessonMathPeriod1, examB)).toBe(false);
+    });
   });
 });

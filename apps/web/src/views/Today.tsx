@@ -1,8 +1,9 @@
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { addDays, type Lesson, type Holiday } from '@untisplus/shared';
+import { addDays, deduplicateExams, isExamForLesson, type Exam, type Holiday, type Lesson } from '@untisplus/shared';
+import { api } from '../api.js';
 import { useApp } from '../store.js';
-import { useEffectiveTarget, useWeekLessons } from '../data.js';
+import { useEffectiveTarget, useModule, useWeekLessons } from '../data.js';
 import { useNow } from '../hooks.js';
 import { dowShort, formatDay, formatTime, lessonsForDay, todayIso } from '../lib.js';
 import { LessonCard } from '../components/LessonCard.js';
@@ -59,6 +60,12 @@ export function TodayView() {
 
   const { lessons, loading, error, reload, weekStart } = useWeekLessons(anchor);
   const effectiveTarget = useEffectiveTarget();
+
+  const examsMod = useModule<Exam>(
+    () => api.exams(addDays(weekStart, -7), addDays(weekStart, 14)),
+    [weekStart],
+  );
+  const cleanExams = useMemo(() => deduplicateExams(examsMod.items), [examsMod.items]);
 
   const weekDays = useMemo(() => Array.from({ length: 7 }, (_, i) => addDays(weekStart, i)), [weekStart]);
   const visibleDays = weekDays.filter((d) => !isWeekendIso(d));
@@ -316,7 +323,11 @@ export function TodayView() {
                 ) : (
                   <LessonCard
                     key={`${item.lesson.id}-${idx}`}
-                    lesson={item.lesson}
+                    lesson={
+                      cleanExams.some((e) => isExamForLesson(item.lesson, e))
+                        ? { ...item.lesson, isExam: true }
+                        : item.lesson
+                    }
                     role={role}
                     onClick={setDetail}
                   />
@@ -328,7 +339,14 @@ export function TodayView() {
       </div>
 
       <Dialog open={Boolean(detail)} onClose={() => setDetail(null)} title={t('today.title')}>
-        {detail && <LessonDetail lesson={detail} role={role} />}
+        {detail && (
+          <LessonDetail
+            lesson={detail}
+            role={role}
+            linkedExams={cleanExams.filter((e) => isExamForLesson(detail, e))}
+            onClose={() => setDetail(null)}
+          />
+        )}
       </Dialog>
 
       {/* Calendar Export Hub Modal */}
