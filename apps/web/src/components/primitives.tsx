@@ -188,6 +188,7 @@ export function Dialog({
         aria-label={title}
         onClick={(e) => e.stopPropagation()}
       >
+        <div className="sheet-handle show-on-mobile" />
         <div className="row" style={{ marginBottom: 12 }}>
           <h2 style={{ fontSize: 17, fontWeight: 800 }}>{title}</h2>
           <div className="spacer" />

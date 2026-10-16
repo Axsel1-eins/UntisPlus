@@ -17,8 +17,15 @@ export function ModuleHeader({
   return (
     <div className="row wrap" style={{ gap: 10, marginBottom: 14 }}>
       <button
+        type="button"
         className="btn ghost icon"
-        onClick={() => navigate('settings')}
+        onClick={() => {
+          if (typeof window !== 'undefined' && window.history.length > 1) {
+            window.history.back();
+          } else {
+            navigate('today');
+          }
+        }}
         aria-label={t('onboarding.back')}
         title={t('onboarding.back')}
       >

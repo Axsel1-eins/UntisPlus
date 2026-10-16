@@ -623,6 +623,7 @@ function AddAbsenceModal({
   return (
     <div className="dialog-backdrop" onClick={onClose}>
       <div className="dialog card pad" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 500 }}>
+        <div className="sheet-handle show-on-mobile" />
         <div className="row" style={{ justifyContent: 'space-between', marginBottom: 12 }}>
           <h2 style={{ fontSize: 18, fontWeight: 800 }}>{t('absences.addModalTitle')}</h2>
           <button className="btn ghost sm" onClick={onClose} type="button">
@@ -824,6 +825,7 @@ function ExcuseLetterModal({
   return (
     <div className="dialog-backdrop" onClick={onClose}>
       <div className="dialog card pad" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 580 }}>
+        <div className="sheet-handle show-on-mobile" />
         <div className="row" style={{ justifyContent: 'space-between', marginBottom: 12 }}>
           <h2 style={{ fontSize: 18, fontWeight: 800 }}>📄 {t('absences.letterModalTitle')}</h2>
           <button className="btn ghost sm" onClick={onClose} type="button">
