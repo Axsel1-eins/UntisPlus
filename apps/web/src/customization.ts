@@ -197,7 +197,7 @@ export const DEFAULT_CUSTOMIZATION: CustomizationState = {
   substDisplayMode: 'both',
 
   // Day View defaults
-  dayPeriodHeight: 84,
+  dayPeriodHeight: 88,
   dayLessonLayout: 'side-by-side',
 
   // Configurable Lesson Badges & Exams defaults

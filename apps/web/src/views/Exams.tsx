@@ -104,7 +104,33 @@ export function ExamsView() {
   }, [grades]);
 
   const items = useMemo(() => {
-    const list = [...mod.items].sort((a, b) => a.date.localeCompare(b.date) || a.startMin - b.startMin);
+    const combined: Exam[] = [...mod.items];
+    const seen = new Set<string>(
+      combined.map((e) => `${e.date}|${e.startMin}|${e.subject?.id ?? e.subject?.name ?? ''}`),
+    );
+
+    for (const l of lessons) {
+      if (l.status === 'EXAM') {
+        const subj = primarySubject(l);
+        const key = `${l.date}|${l.startMin}|${subj?.id ?? subj?.name ?? ''}`;
+        if (!seen.has(key)) {
+          seen.add(key);
+          combined.push({
+            id: parseInt(l.id, 10) || 90000 + Math.abs(l.startMin),
+            date: l.date,
+            startMin: l.startMin,
+            endMin: l.endMin,
+            subject: subj,
+            teachers: l.teachers,
+            rooms: l.rooms,
+            type: 'Schularbeit / Prüfung',
+            text: l.info || l.substText || (subj ? `Prüfung in ${subj.name}` : 'Prüfung'),
+          });
+        }
+      }
+    }
+
+    const list = combined.sort((a, b) => a.date.localeCompare(b.date) || a.startMin - b.startMin);
     if (examScope === 'upcoming') {
       return list.filter((e) => e.date >= today);
     }
@@ -112,7 +138,7 @@ export function ExamsView() {
       return list.filter((e) => e.date < today);
     }
     return list;
-  }, [mod.items, examScope, today]);
+  }, [mod.items, lessons, examScope, today]);
 
   // Active timetable subject names for prioritizing student's own subjects
   const timetableSubjectCodes = useMemo(() => {

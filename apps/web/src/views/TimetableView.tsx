@@ -85,11 +85,11 @@ export function TimetableView() {
   const effectiveTarget = useEffectiveTarget();
 
   const examsMod = useModule<Exam>(
-    () => api.exams(weekStart, addDays(weekStart, 7)),
+    () => api.exams(addDays(weekStart, -7), addDays(weekStart, 21)),
     [weekStart],
   );
   const hwMod = useModule<Homework>(
-    () => api.homework(weekStart, addDays(weekStart, 7)),
+    () => api.homework(addDays(weekStart, -7), addDays(weekStart, 21)),
     [weekStart],
   );
 

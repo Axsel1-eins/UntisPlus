@@ -16,12 +16,10 @@ RUN npm ci
 COPY packages/shared/ ./packages/shared/
 COPY apps/api/ ./apps/api/
 COPY apps/web/ ./apps/web/
-COPY tsconfig.json ./
+COPY tsconfig*.json ./
 
 # Build shared library, API, and Web frontend
-RUN npm run build --workspace=@untisplus/shared
-RUN npm run build --workspace=@untisplus/api
-RUN npm run build --workspace=@untisplus/web
+RUN npm run build
 
 # --- Production Runner Stage ---
 FROM node:22-alpine AS runner
@@ -51,4 +49,4 @@ EXPOSE 8787
 HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
   CMD wget --no-verbose --tries=1 --spider http://127.0.0.1:8787/health || exit 1
 
-CMD ["node", "apps/api/dist/server.js"]
+CMD ["node", "apps/api/dist/index.js"]

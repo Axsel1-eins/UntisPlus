@@ -753,48 +753,75 @@ export class WebUntisClient {
 
 
   async getExams(start: string, end: string): Promise<Exam[]> {
-    // 1. Try modern REST endpoint /WebUntis/api/rest/view/v1/exams
+    const sInt = dateToInt(start);
+    const eInt = dateToInt(end);
+    const allExams: Exam[] = [];
+    const seen = new Set<string>();
+
+    const addExam = (raw: Record<string, any>) => {
+      try {
+        const normalized = normalizeExam(raw);
+        const key = `${normalized.id || 0}|${normalized.date}|${normalized.startMin}|${normalized.subject?.id || normalized.subject?.name || ''}`;
+        if (!seen.has(key)) {
+          seen.add(key);
+          allExams.push(normalized);
+        }
+      } catch {
+        // Skip malformed individual exam
+      }
+    };
+
+    // 1. Modern REST endpoint with date parameters
     try {
-      const v1Data = await this.rest<{ exams?: Record<string, any>[] }>('/WebUntis/api/rest/view/v1/exams');
-      if (Array.isArray(v1Data?.exams) && v1Data.exams.length > 0) {
-        const sInt = dateToInt(start);
-        const eInt = dateToInt(end);
-        const filtered = v1Data.exams.filter((ex) => {
+      const v1Data = await this.rest<{ exams?: Record<string, any>[] }>('/WebUntis/api/rest/view/v1/exams', {
+        startDate: sInt,
+        endDate: eInt,
+      });
+      if (Array.isArray(v1Data?.exams)) {
+        for (const ex of v1Data.exams) {
           const d = Number(ex.startDate ?? ex.date ?? 0);
-          return !d || (d >= sInt && d <= eInt);
-        });
-        return filtered.map(normalizeExam);
+          if (!d || (d >= sInt && d <= eInt)) {
+            addExam(ex);
+          }
+        }
       }
     } catch {
-      // Fall through to /WebUntis/api/exams
+      // Continue to next source
     }
 
-    // 2. Try REST endpoint /WebUntis/api/exams?startDate=...&endDate=...
+    // 2. Legacy REST endpoint /WebUntis/api/exams
     try {
       const legacyRest = await this.rest<{ exams?: Record<string, any>[] }>('/WebUntis/api/exams', {
-        startDate: dateToInt(start),
-        endDate: dateToInt(end),
+        startDate: sInt,
+        endDate: eInt,
       });
-      if (Array.isArray(legacyRest?.exams) && legacyRest.exams.length > 0) {
-        return legacyRest.exams.map(normalizeExam);
+      if (Array.isArray(legacyRest?.exams)) {
+        for (const ex of legacyRest.exams) {
+          addExam(ex);
+        }
       }
     } catch {
-      // Fall through to classic JSON-RPC
+      // Continue to next source
     }
 
-    // 3. Fallback to classic JSON-RPC getExams
+    // 3. Classic JSON-RPC getExams (often contains official school tests and oral exams)
     try {
       const raw = await this.rpc<Record<string, any>[]>('getExams', {
-        startDate: dateToInt(start),
-        endDate: dateToInt(end),
+        startDate: sInt,
+        endDate: eInt,
       });
-      return (raw ?? []).map(normalizeExam);
-    } catch (err: unknown) {
-      if (err instanceof UntisError && err.code === -32601) {
-        return [];
+      if (Array.isArray(raw)) {
+        for (const ex of raw) {
+          addExam(ex);
+        }
       }
-      throw err;
+    } catch (err: unknown) {
+      if (!(err instanceof UntisError && err.code === -32601)) {
+        // Silently continue
+      }
     }
+
+    return allExams.sort((a, b) => a.date.localeCompare(b.date) || a.startMin - b.startMin);
   }
 
   async getMessages(date: string): Promise<Message[]> {

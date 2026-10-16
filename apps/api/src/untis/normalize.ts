@@ -73,8 +73,17 @@ function refsAny(full: RawRef[] | undefined, compact: RawRef[] | undefined): Ref
 /** Map a WebUntis `code`/`type` to our normalized lesson status. */
 function lessonStatus(raw: RawLesson): LessonStatus {
   if (raw.code === 'cancelled') return 'CANCELLED';
+  if (
+    raw.code === 'exam' ||
+    raw.type === 'exam' ||
+    raw.activityType === 'exam' ||
+    raw.activityType === 'EXAM' ||
+    (raw as any).lstype === 'sp' ||
+    Boolean((raw as any).exam)
+  ) {
+    return 'EXAM';
+  }
   if (raw.code === 'irregular') return 'IRREGULAR';
-  if (raw.type === 'exam' || raw.activityType === 'exam') return 'EXAM';
   return 'REGULAR';
 }
 
