@@ -1,0 +1,37 @@
+# Version control
+.git
+.github
+
+# Dependencies
+node_modules
+**/node_modules
+
+# Mobile and platform builds
+dist-mobile
+apps/web/android
+apps/web/ios
+
+# Documentation and markdown files (keep README)
+docs
+*.md
+!README.md
+**/*.md
+!**/README.md
+
+# Logs
+logs
+*.log
+**/*.log
+
+# Build artifacts
+dist
+**/dist
+
+# Environment and local files
+.env
+.env.*
+.DS_Store
+coverage
+.vite
+*.tsbuildinfo
+.system_generated

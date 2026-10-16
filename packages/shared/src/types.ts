@@ -129,14 +129,17 @@ export interface Attachment {
 }
 
 export interface Absence {
-  id: number;
+  id: number | string;
   start: string;
   end: string;
+  startTime?: string | number;
+  endTime?: string | number;
   /** Number of missed periods, if provided. */
   periods?: number;
   excused: boolean;
   excuseStatus?: string;
   reason?: string;
+  text?: string;
   subject?: Ref;
 }
 

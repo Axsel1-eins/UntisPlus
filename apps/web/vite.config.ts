@@ -88,7 +88,7 @@ export default defineConfig({
     allowedHosts: true,
     proxy: {
       '/api': {
-        target: process.env.API_URL ?? 'http://localhost:8787',
+        target: process.env.API_URL ?? 'http://127.0.0.1:8787',
         changeOrigin: true,
       },
     },
@@ -99,7 +99,7 @@ export default defineConfig({
     allowedHosts: true,
     proxy: {
       '/api': {
-        target: process.env.API_URL ?? 'http://localhost:8787',
+        target: process.env.API_URL ?? 'http://127.0.0.1:8787',
         changeOrigin: true,
       },
     },
@@ -107,5 +107,33 @@ export default defineConfig({
   build: {
     target: 'es2022',
     sourcemap: true,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          const normalized = id.replace(/\\/g, '/');
+          if (normalized.includes('node_modules')) {
+            if (
+              normalized.includes('lucide') ||
+              normalized.includes('@lucide') ||
+              normalized.includes('react-icons') ||
+              normalized.includes('heroicons')
+            ) {
+              return 'icons';
+            }
+            if (normalized.includes('i18next') || normalized.includes('react-i18next')) {
+              return 'i18n';
+            }
+            if (
+              normalized.includes('/react/') ||
+              normalized.includes('/react-dom/') ||
+              normalized.includes('/scheduler/')
+            ) {
+              return 'react';
+            }
+            return 'vendor';
+          }
+        },
+      },
+    },
   },
 });
