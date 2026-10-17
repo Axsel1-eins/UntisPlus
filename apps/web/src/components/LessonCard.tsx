@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { minutesToTime, type Lesson } from '@untisplus/shared';
+import { getExamTypeBadge, minutesToTime, type Exam, type Lesson } from '@untisplus/shared';
 import type { Role } from '../store.js';
 import { Icon } from './primitives.js';
 import { names, primarySubject, subjectColor, subjectLabel } from '../lib.js';
@@ -10,14 +10,16 @@ interface Props {
   role: Role;
   onClick?: (lesson: Lesson) => void;
   compact?: boolean;
+  linkedExams?: Exam[];
 }
 
 /** A single lesson row — the core building block of Today, Timetable and Substitutions. */
-export function LessonCard({ lesson, role, onClick, compact }: Props) {
+export function LessonCard({ lesson, role, onClick, compact, linkedExams }: Props) {
   const { t } = useTranslation();
   const customization = useCustomization();
   const cancelled = lesson.status === 'CANCELLED';
   const irregular = lesson.status === 'IRREGULAR' || Boolean(lesson.substText && !cancelled);
+  const isExam = lesson.status === 'EXAM' || Boolean(lesson.isExam) || Boolean(linkedExams && linkedExams.length > 0);
 
   if (cancelled && customization.cancellationStyle === 'hidden') {
     return null;
@@ -26,7 +28,7 @@ export function LessonCard({ lesson, role, onClick, compact }: Props) {
     'lesson',
     cancelled ? 'cancelled' : '',
     irregular ? 'irregular' : '',
-    lesson.status === 'EXAM' ? 'exam' : '',
+    isExam ? 'exam' : '',
     onClick ? 'clickable' : '',
   ]
     .filter(Boolean)
@@ -87,6 +89,11 @@ export function LessonCard({ lesson, role, onClick, compact }: Props) {
             {lesson.info}
           </div>
         )}
+        {!compact && linkedExams && linkedExams[0]?.text && (!lesson.info || !lesson.info.includes(linkedExams[0].text)) && (
+          <div className="small muted nowrap" style={{ color: 'var(--accent)', fontWeight: 600 }} title={linkedExams[0].text}>
+            📝 {linkedExams[0].text}
+          </div>
+        )}
       </div>
       <div className="side">
         {cancelled && (
@@ -99,7 +106,26 @@ export function LessonCard({ lesson, role, onClick, compact }: Props) {
             🔄 {t('today.irregular')}
           </span>
         )}
-        {lesson.status === 'EXAM' && <span className="badge exam">{t('today.exam')}</span>}
+        {isExam && (() => {
+          const badge = linkedExams?.[0] ? getExamTypeBadge(linkedExams[0].type) : null;
+          return (
+            <span
+              className="badge exam"
+              style={{
+                fontWeight: 800,
+                ...(badge
+                  ? {
+                      color: badge.color,
+                      background: `color-mix(in srgb, ${badge.color} 15%, var(--surface))`,
+                      border: `1px solid color-mix(in srgb, ${badge.color} 35%, transparent)`,
+                    }
+                  : {}),
+              }}
+            >
+              {badge ? `${badge.icon} ${badge.label}` : `🎓 ${t('today.exam')}`}
+            </span>
+          );
+        })()}
       </div>
     </>
   );

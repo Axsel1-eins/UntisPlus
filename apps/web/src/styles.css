@@ -471,8 +471,36 @@ label.field {
   background: var(--warn) !important;
   width: 6px !important;
 }
+.lesson.exam {
+  border-color: color-mix(in srgb, var(--accent) 50%, var(--border)) !important;
+  background: color-mix(in srgb, var(--accent-soft) 22%, var(--surface)) !important;
+}
 .lesson.exam::before {
-  background: var(--accent);
+  background: var(--accent) !important;
+  width: 6px !important;
+}
+.day-exam-banner {
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+.day-exam-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  transition: transform 0.12s ease, border-color 0.12s ease, box-shadow 0.12s ease;
+}
+.day-exam-item.clickable {
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+}
+.day-exam-item.clickable:hover {
+  border-color: var(--accent);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow);
 }
 .lesson .note {
   font-size: 13px;

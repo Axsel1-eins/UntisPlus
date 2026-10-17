@@ -208,4 +208,103 @@ describe('Timetable matching and period generation robustness', () => {
     expect(defaultBadge.label).toBe('Prüfung');
     expect(defaultBadge.color).toBe('#6366f1');
   });
+
+  it('accurately identifies day exams, strip indicators, and rich lesson card badges', async () => {
+    const { isExamForLesson, getExamTypeBadge, deduplicateExams } = await import('@untisplus/shared');
+
+    const sampleExams = [
+      {
+        id: 101,
+        date: '2026-10-21',
+        startMin: 480, // 08:00
+        endMin: 570,   // 09:30
+        subject: { id: 1, name: 'M', longName: 'Mathematik' },
+        teachers: [{ id: 10, name: 'SMI' }],
+        rooms: [{ id: 100, name: 'C2.01' }],
+        type: 'Schularbeit',
+        text: '1. Schularbeit Analysis & Vektoren',
+      },
+      {
+        id: 102,
+        date: '2026-10-21',
+        startMin: 600, // 10:00
+        endMin: 645,   // 10:45
+        subject: { id: 2, name: 'E', longName: 'Englisch' },
+        teachers: [{ id: 20, name: 'JON' }],
+        rooms: [{ id: 101, name: 'C2.02' }],
+        type: 'Test',
+        text: 'Vocab Unit 3',
+      },
+      {
+        id: 103,
+        date: '2026-10-23',
+        startMin: 815,
+        endMin: 900,
+        subject: { id: 3, name: 'POS1', longName: 'Programmieren' },
+        teachers: [{ id: 30, name: 'GRB' }],
+        rooms: [{ id: 105, name: 'EDV3' }],
+        type: 'PLF',
+        text: 'Praktische Leistungsfeststellung SQL',
+      },
+    ];
+
+    const clean = deduplicateExams(sampleExams);
+
+    // 1. Day strip indicator detection
+    const weekDays = ['2026-10-19', '2026-10-20', '2026-10-21', '2026-10-22', '2026-10-23'];
+    const daysWithExams = weekDays.filter((d) => clean.some((e) => e.date === d));
+    expect(daysWithExams).toEqual(['2026-10-21', '2026-10-23']);
+    expect(clean.some((e) => e.date === '2026-10-21')).toBe(true);
+    expect(clean.some((e) => e.date === '2026-10-22')).toBe(false);
+
+    // 2. Selected day exams list
+    const dayExams = clean.filter((e) => e.date === '2026-10-21');
+    expect(dayExams.length).toBe(2);
+    expect(dayExams[0]?.subject?.name).toBe('M');
+    expect(dayExams[1]?.subject?.name).toBe('E');
+
+    // 3. LessonCard isExam computation and badge extraction
+    const mLesson: Partial<Lesson> = {
+      id: 'l-m',
+      date: '2026-10-21',
+      startMin: 480,
+      endMin: 530,
+      subjects: [{ id: 1, name: 'M' }],
+      teachers: [{ id: 10, name: 'SMI' }],
+      rooms: [{ id: 100, name: 'C2.01' }],
+      status: 'REGULAR',
+    };
+
+    const dLesson: Partial<Lesson> = {
+      id: 'l-d',
+      date: '2026-10-21',
+      startMin: 705,
+      endMin: 755,
+      subjects: [{ id: 5, name: 'D' }],
+      teachers: [{ id: 50, name: 'WAG' }],
+      rooms: [{ id: 100, name: 'C2.01' }],
+      status: 'REGULAR',
+    };
+
+    // Math lesson matches exam 101
+    const matchingM = dayExams.filter((e) => isExamForLesson(mLesson as Lesson, e));
+    expect(matchingM.length).toBe(1);
+    expect(matchingM[0]?.id).toBe(101);
+
+    // German lesson does not match any exam on that day
+    const matchingD = dayExams.filter((e) => isExamForLesson(dLesson as Lesson, e));
+    expect(matchingD.length).toBe(0);
+
+    // LessonCard isExam flag logic
+    const isExamM = mLesson.status === 'EXAM' || Boolean(mLesson.isExam) || matchingM.length > 0;
+    const isExamD = dLesson.status === 'EXAM' || Boolean(dLesson.isExam) || matchingD.length > 0;
+    expect(isExamM).toBe(true);
+    expect(isExamD).toBe(false);
+
+    // Badge styling matches exam type
+    const badgeM = getExamTypeBadge(matchingM[0]?.type);
+    expect(badgeM.label).toBe('Schularbeit');
+    expect(badgeM.icon).toBe('📝');
+    expect(badgeM.color).toBe('#ef4444');
+  });
 });

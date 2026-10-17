@@ -31,6 +31,7 @@ import {
 } from '../lib.js';
 import { LessonCard } from '../components/LessonCard.js';
 import { LessonDetail } from '../components/LessonDetail.js';
+import { DayExamBanner } from '../components/DayExamBanner.js';
 import { TargetPicker } from '../components/TargetPicker.js';
 import { TargetModal } from '../components/TargetModal.js';
 import { CalendarExportModal } from '../components/CalendarExportModal.js';
@@ -129,6 +130,10 @@ export function TimetableView() {
   );
 
   const selectedDay = days[Math.min(dayIndex, days.length - 1)] ?? days[0]!;
+  const selectedDayExams = useMemo(
+    () => cleanExams.filter((e) => e.date === selectedDay),
+    [cleanExams, selectedDay],
+  );
   const dayLessons = useMemo(() => {
     let list = lessonsForDay(lessons, selectedDay);
     if (customization.cancellationStyle === 'hidden') {
@@ -653,6 +658,7 @@ export function TimetableView() {
           <div className="tabs" style={{ marginBottom: 14 }}>
             {days.map((day, i) => {
               const dayHoliday = getDayHoliday(day);
+              const dayHasExams = cleanExams.some((e) => e.date === day);
               return (
                 <button
                   key={day}
@@ -669,8 +675,21 @@ export function TimetableView() {
                 >
                   {dowShort(day, i18n.language)} {Number(day.slice(-2))}
                   {dayHoliday && (
-                    <span title={dayHoliday.name} style={{ marginLeft: 4, fontSize: '0.8rem' }}>
+                    <span title={dayHoliday.name} style={{ marginLeft: 3, fontSize: '0.8rem' }}>
                       🍂
+                    </span>
+                  )}
+                  {dayHasExams && (
+                    <span
+                      title={t('today.examsOnDay')}
+                      style={{
+                        marginLeft: 3,
+                        fontSize: '0.75rem',
+                        color: i === dayIndex ? 'inherit' : '#ef4444',
+                        fontWeight: 900,
+                      }}
+                    >
+                      ●
                     </span>
                   )}
                 </button>
@@ -681,6 +700,13 @@ export function TimetableView() {
           <h2 className="section" style={{ marginTop: 0 }}>
             {formatDay(selectedDay, i18n.language)}
           </h2>
+
+          <DayExamBanner
+            exams={selectedDayExams}
+            selectedDay={selectedDay}
+            dayLessons={dayLessons}
+            onSelectLesson={setDetail}
+          />
 
           {(() => {
             const selectedHoliday = getDayHoliday(selectedDay);
@@ -736,10 +762,12 @@ export function TimetableView() {
                   );
                 }
 
+                const matching = cleanExams.filter((e) => isExamForLesson(item.lesson, e));
                 return (
                   <LessonCard
                     key={item.lesson.id}
-                    lesson={item.lesson}
+                    lesson={matching.length > 0 ? { ...item.lesson, isExam: true } : item.lesson}
+                    linkedExams={matching}
                     role={role}
                     onClick={setDetail}
                   />

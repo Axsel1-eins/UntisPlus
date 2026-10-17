@@ -8,6 +8,7 @@ import { useNow } from '../hooks.js';
 import { dowShort, formatDay, formatTime, lessonsForDay, todayIso } from '../lib.js';
 import { LessonCard } from '../components/LessonCard.js';
 import { LessonDetail } from '../components/LessonDetail.js';
+import { DayExamBanner } from '../components/DayExamBanner.js';
 import { NowBar } from '../components/NowBar.js';
 import { TargetPicker } from '../components/TargetPicker.js';
 import { CalendarExportModal } from '../components/CalendarExportModal.js';
@@ -73,6 +74,10 @@ export function TodayView() {
   const days = showWeekend ? weekDays : (visibleDays.length ? visibleDays : weekDays);
 
   const dayLessons = useMemo(() => lessonsForDay(lessons, selectedDay), [lessons, selectedDay]);
+  const selectedDayExams = useMemo(
+    () => cleanExams.filter((e) => e.date === selectedDay),
+    [cleanExams, selectedDay],
+  );
 
   const cancelledToday = useMemo(() => dayLessons.filter((l) => l.status === 'CANCELLED'), [dayLessons]);
   const irregularToday = useMemo(
@@ -212,6 +217,7 @@ export function TodayView() {
           {days.map((day) => {
             const active = day === selectedDay;
             const isToday = day === today;
+            const dayHasExams = cleanExams.some((e) => e.date === day);
             return (
               <button
                 key={day}
@@ -229,6 +235,7 @@ export function TodayView() {
                   background: active ? 'var(--accent)' : 'var(--surface)',
                   borderColor: active ? 'var(--accent)' : 'var(--border)',
                   color: active ? 'var(--accent-ink)' : 'var(--text)',
+                  position: 'relative',
                 }}
               >
                 <span className="tiny" style={{ opacity: 0.8 }}>
@@ -237,14 +244,29 @@ export function TodayView() {
                 <span style={{ fontWeight: 800, fontSize: 17 }}>
                   {Number(day.slice(-2))}
                 </span>
-                {isToday && (
-                  <span
-                    className="tiny"
-                    style={{ opacity: 0.9, textDecoration: active ? 'none' : 'underline' }}
-                  >
-                    •
-                  </span>
-                )}
+                <div className="row" style={{ gap: 3, alignItems: 'center', height: 10 }}>
+                  {isToday && (
+                    <span
+                      className="tiny"
+                      style={{ opacity: 0.9, textDecoration: active ? 'none' : 'underline' }}
+                    >
+                      •
+                    </span>
+                  )}
+                  {dayHasExams && (
+                    <span
+                      title={t('today.examsOnDay')}
+                      style={{
+                        fontSize: 9,
+                        color: active ? 'var(--accent-ink)' : '#ef4444',
+                        fontWeight: 900,
+                        lineHeight: 1,
+                      }}
+                    >
+                      ●
+                    </span>
+                  )}
+                </div>
               </button>
             );
           })}
@@ -270,6 +292,16 @@ export function TodayView() {
           </div>
         )}
         {error ? <ErrorState message={t('common.error')} onRetry={reload} retryLabel={t('common.retry')} /> : null}
+
+        {!loading && !error && (
+          <DayExamBanner
+            exams={selectedDayExams}
+            selectedDay={selectedDay}
+            dayLessons={dayLessons}
+            onSelectLesson={setDetail}
+          />
+        )}
+
         {!loading && !error && dayLessons.length === 0 && (
           <EmptyState icon="check" title={t('today.noLessons')} />
         )}
@@ -321,18 +353,22 @@ export function TodayView() {
                       {item.label} ({formatTime(item.from)}–{formatTime(item.to)})
                     </span>
                   </div>
-                ) : (
-                  <LessonCard
-                    key={`${item.lesson.id}-${idx}`}
-                    lesson={
-                      cleanExams.some((e) => isExamForLesson(item.lesson, e))
-                        ? { ...item.lesson, isExam: true }
-                        : item.lesson
-                    }
-                    role={role}
-                    onClick={setDetail}
-                  />
-                ),
+                ) : (() => {
+                  const matching = cleanExams.filter((e) => isExamForLesson(item.lesson, e));
+                  return (
+                    <LessonCard
+                      key={`${item.lesson.id}-${idx}`}
+                      lesson={
+                        matching.length > 0
+                          ? { ...item.lesson, isExam: true }
+                          : item.lesson
+                      }
+                      linkedExams={matching}
+                      role={role}
+                      onClick={setDetail}
+                    />
+                  );
+                })(),
               )}
             </div>
           </>
