@@ -3,7 +3,12 @@ import { useTranslation } from 'react-i18next';
 import { useApp, type NotifyPref } from '../store.js';
 import { useInstallPrompt } from '../hooks.js';
 import { navigate, type Route } from '../router.js';
-import { notificationPermission, requestNotificationPermission } from '../notify.js';
+import {
+  getNotificationDiagnostics,
+  notificationPermission,
+  requestNotificationPermission,
+  sendTestNotification,
+} from '../notify.js';
 import { getNavItems, getSettingsSections, listMods, useModsVersion } from '../mods.js';
 import { getTheme, useThemes } from '../themes.js';
 import { APP_VERSION } from '../version.js';
@@ -53,6 +58,10 @@ export function SettingsView() {
   const { canInstall, promptInstall, installed } = useInstallPrompt();
   const [refreshing, setRefreshing] = useState(false);
   const [permission, setPermission] = useState(notificationPermission());
+  const [testingNotify, setTestingNotify] = useState(false);
+  const [countdown, setCountdown] = useState<number | null>(null);
+  const [testResult, setTestResult] = useState<{ ok: boolean; message: string } | null>(null);
+  const diag = getNotificationDiagnostics();
   const [calFeed, setCalFeed] = useState<{ url: string; webcalUrl: string } | null>(null);
   const [loadingCal, setLoadingCal] = useState(false);
   const [calModalOpen, setCalModalOpen] = useState(false);
@@ -100,6 +109,56 @@ export function SettingsView() {
     if (v === 'on') {
       await requestNotificationPermission();
       setPermission(notificationPermission());
+    }
+  }
+
+  async function runTest(delaySeconds = 0) {
+    setTestResult(null);
+    setTestingNotify(true);
+
+    if (delaySeconds > 0) {
+      for (let s = delaySeconds; s > 0; s--) {
+        setCountdown(s);
+        await new Promise((r) => setTimeout(r, 1000));
+      }
+      setCountdown(null);
+    }
+
+    try {
+      const res = await sendTestNotification();
+      setPermission(notificationPermission());
+      if (res.ok) {
+        setTestResult({
+          ok: true,
+          message: t('settings.notifyTestSuccess'),
+        });
+        toast(t('settings.notifyTestSuccess'), 'success');
+      } else if (res.reason === 'ios_not_standalone') {
+        setTestResult({
+          ok: false,
+          message: t('settings.notifyIosHint'),
+        });
+        toast(t('settings.notifyIosHint'), 'info');
+      } else if (res.reason === 'denied') {
+        setTestResult({
+          ok: false,
+          message: t('settings.notifyBlocked'),
+        });
+        toast(t('settings.notifyBlocked'), 'error');
+      } else {
+        setTestResult({
+          ok: false,
+          message: t('settings.notifyPermUnsupported'),
+        });
+      }
+    } catch (e) {
+      setTestResult({
+        ok: false,
+        message: String(e),
+      });
+    } finally {
+      setTestingNotify(false);
+      setCountdown(null);
     }
   }
 
@@ -317,8 +376,8 @@ export function SettingsView() {
 
       <div className="section">
         <h2>{t('settings.notifications')}</h2>
-        <div className="card pad col" style={{ gap: 10 }}>
-          <div className="row" style={{ gap: 10 }}>
+        <div className="card pad col" style={{ gap: 12 }}>
+          <div className="row" style={{ gap: 10, alignItems: 'center' }}>
             <Icon name="bell" size={20} />
             <div className="small muted" style={{ flex: 1 }}>
               {t('settings.notifyHint')}
@@ -335,9 +394,122 @@ export function SettingsView() {
               ]}
             />
           </div>
+
+          <div
+            className="row"
+            style={{
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              fontSize: 13,
+              borderTop: '1px solid var(--border)',
+              paddingTop: 10,
+            }}
+          >
+            <span className="muted">{t('settings.notifyStatus', { status: '' })}</span>
+            <span
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                fontWeight: 600,
+                color:
+                  permission === 'granted'
+                    ? 'var(--success, #10b981)'
+                    : permission === 'denied'
+                      ? 'var(--danger, #ef4444)'
+                      : 'var(--muted)',
+              }}
+            >
+              <span
+                style={{
+                  width: 8,
+                  height: 8,
+                  borderRadius: '50%',
+                  background:
+                    permission === 'granted'
+                      ? 'var(--success, #10b981)'
+                      : permission === 'denied'
+                        ? 'var(--danger, #ef4444)'
+                        : 'var(--muted)',
+                }}
+              />
+              {permission === 'granted'
+                ? t('settings.notifyPermGranted')
+                : permission === 'denied'
+                  ? t('settings.notifyPermDenied')
+                  : permission === 'default'
+                    ? t('settings.notifyPermDefault')
+                    : t('settings.notifyPermUnsupported')}
+            </span>
+          </div>
+
+          {diag.iosWebPushBlocked && (
+            <div
+              className="row"
+              style={{
+                gap: 8,
+                padding: '8px 10px',
+                borderRadius: 8,
+                background: 'rgba(234, 179, 8, 0.12)',
+                border: '1px solid rgba(234, 179, 8, 0.3)',
+                color: '#eab308',
+                fontSize: 12,
+                lineHeight: 1.4,
+              }}
+            >
+              <Icon name="alert" size={16} />
+              <div style={{ flex: 1 }}>{t('settings.notifyIosHint')}</div>
+            </div>
+          )}
+
           {notifyPref === 'on' && permission === 'denied' && (
             <div className="tiny" style={{ color: 'var(--danger)' }}>
               {t('settings.notifyBlocked')}
+            </div>
+          )}
+
+          <div className="row wrap" style={{ gap: 8, marginTop: 4 }}>
+            <button
+              type="button"
+              className="btn sm primary"
+              disabled={testingNotify}
+              onClick={() => void runTest(0)}
+              style={{ gap: 6 }}
+            >
+              <Icon name="bell" size={15} />
+              <span>{t('settings.notifyTestButton')}</span>
+            </button>
+
+            <button
+              type="button"
+              className="btn sm"
+              disabled={testingNotify}
+              onClick={() => void runTest(5)}
+              style={{ gap: 6 }}
+              title="Gibt dir 5 Sekunden Zeit, das Display zu sperren oder die App zu minimieren"
+            >
+              <Icon name="clock" size={15} />
+              <span>
+                {countdown !== null
+                  ? t('settings.notifyTestingIn', { seconds: countdown })
+                  : t('settings.notifyTestDelayed')}
+              </span>
+            </button>
+          </div>
+
+          {testResult && (
+            <div
+              className="small"
+              style={{
+                marginTop: 2,
+                padding: '6px 10px',
+                borderRadius: 6,
+                background: testResult.ok ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                color: testResult.ok ? 'var(--success, #10b981)' : 'var(--danger, #ef4444)',
+                border: `1px solid ${testResult.ok ? 'rgba(16, 185, 129, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`,
+              }}
+            >
+              {testResult.message}
             </div>
           )}
         </div>
