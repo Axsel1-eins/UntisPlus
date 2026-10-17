@@ -151,14 +151,14 @@ export function DayExamBanner({
 
               {/* Teacher & Room metadata */}
               <div className="row wrap" style={{ gap: 8, fontSize: 12, color: 'var(--muted)', flexShrink: 0 }}>
-                {ex.rooms.length > 0 && (
+                {(ex.rooms ?? []).length > 0 && (
                   <span>
-                    <Icon name="mapPin" size={12} /> {names(ex.rooms)}
+                    <Icon name="mapPin" size={12} /> {names(ex.rooms ?? [])}
                   </span>
                 )}
-                {ex.teachers.length > 0 && (
+                {(ex.teachers ?? []).length > 0 && (
                   <span>
-                    <Icon name="user" size={12} /> {names(ex.teachers)}
+                    <Icon name="user" size={12} /> {names(ex.teachers ?? [])}
                   </span>
                 )}
               </div>
@@ -178,7 +178,7 @@ export function DayExamBanner({
                 key={examKey}
                 type="button"
                 className="day-exam-item clickable"
-                onClick={() => onSelectLesson(matchedLesson)}
+                onClick={() => onSelectLesson({ ...matchedLesson, isExam: true })}
                 title={t('timetable.title')}
               >
                 {content}
@@ -187,9 +187,15 @@ export function DayExamBanner({
           }
 
           return (
-            <div key={examKey} className="day-exam-item">
+            <button
+              key={examKey}
+              type="button"
+              className="day-exam-item clickable"
+              onClick={() => navigate('exams')}
+              title={t('nav.exams')}
+            >
               {content}
-            </div>
+            </button>
           );
         })}
       </div>

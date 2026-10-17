@@ -74,4 +74,20 @@ describe('diffLessons', () => {
     const next = [lesson({ status: 'CANCELLED', rooms: [{ id: 99, name: 'X' }] })];
     expect(diffLessons([lesson()], next)[0]?.kind).toBe('CANCELLED');
   });
+
+  it('detects ROOM_CHANGE even when lesson.id changes due to room-embedded lesson keys', () => {
+    const before = lesson({
+      id: '2026-10-14-480-21-31',
+      rooms: [{ id: 31, name: 'A101' }],
+    });
+    const after = lesson({
+      id: '2026-10-14-480-21-32', // Generated ID changed because room changed!
+      rooms: [{ id: 32, name: 'A102' }],
+    });
+
+    const diff = diffLessons([before], [after]);
+    expect(diff.length).toBe(1);
+    expect(diff[0]?.kind).toBe('ROOM_CHANGE');
+    expect(diff[0]?.id).toBe('2026-10-14-480-21-32');
+  });
 });

@@ -55,6 +55,13 @@ export const fr = {
       inRoom: 'en salle',
       startsIn: 'commence à',
       changesAlert: '{{count}} modification(s) aujourd’hui',
+      examsAlert: '{{count}} examen / test ce jour',
+      examsAlert_other: '{{count}} examens / tests ce jour',
+      examsAlertToday: "Aujourd'hui : {{count}} examen / test",
+      examsAlertToday_other: "Aujourd'hui : {{count}} examens / tests",
+      viewExams: 'Voir tous les examens',
+      examsOnDay: 'Examens & Tests',
+      unmatchedExam: 'Examen en dehors des cours réguliers',
     },
     timetable: {
       title: 'Emploi du temps',

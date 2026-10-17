@@ -55,6 +55,13 @@ export const it = {
       inRoom: 'in aula',
       startsIn: 'inizia alle',
       changesAlert: '{{count}} variazione/i nell’orario di oggi',
+      examsAlert: '{{count}} esame / test questo giorno',
+      examsAlert_other: '{{count}} esami / test questo giorno',
+      examsAlertToday: 'Oggi: {{count}} esame / test',
+      examsAlertToday_other: 'Oggi: {{count}} esami / test',
+      viewExams: 'Mostra tutti gli esami',
+      examsOnDay: 'Esami & Test',
+      unmatchedExam: 'Esame al di fuori delle normali lezioni',
     },
     timetable: {
       title: 'Orario scolastico',

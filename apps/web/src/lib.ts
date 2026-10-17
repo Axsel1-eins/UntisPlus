@@ -281,15 +281,35 @@ function inferKind(lesson: Lesson): SubstitutionKind {
 const DOW_DE = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
 const DOW_EN = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
+const LOCALE_MAP: Record<string, string> = {
+  de: 'de-AT',
+  en: 'en-GB',
+  fr: 'fr-FR',
+  es: 'es-ES',
+  it: 'it-IT',
+  tr: 'tr-TR',
+  bs: 'bs-BA',
+  uk: 'uk-UA',
+  ru: 'ru-RU',
+  ar: 'ar-SA',
+};
+
 export function dowShort(iso: string, lang: string): string {
   const [y, m, d] = iso.split('-').map(Number) as [number, number, number];
-  const idx = new Date(y, m - 1, d).getDay();
-  return (lang === 'en' ? DOW_EN : DOW_DE)[idx]!;
+  const date = new Date(y, m - 1, d);
+  try {
+    const locale = LOCALE_MAP[lang] ?? (lang === 'en' ? 'en-GB' : 'de-AT');
+    const s = date.toLocaleDateString(locale, { weekday: 'short' });
+    return s ? s.charAt(0).toUpperCase() + s.slice(1).replace(/\.$/, '') : (lang === 'en' ? DOW_EN : DOW_DE)[date.getDay()]!;
+  } catch {
+    return (lang === 'en' ? DOW_EN : DOW_DE)[date.getDay()]!;
+  }
 }
 
 export function formatDay(iso: string, lang: string): string {
   const [y, m, d] = iso.split('-').map(Number) as [number, number, number];
-  return new Date(y, m - 1, d).toLocaleDateString(lang === 'en' ? 'en-GB' : 'de-AT', {
+  const locale = LOCALE_MAP[lang] ?? (lang === 'en' ? 'en-GB' : 'de-AT');
+  return new Date(y, m - 1, d).toLocaleDateString(locale, {
     weekday: 'long',
     day: 'numeric',
     month: 'long',

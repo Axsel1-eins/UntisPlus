@@ -103,7 +103,7 @@ describe('iCalendar generator', () => {
     expect(ics).toContain('UID:lesson-2@untisplus');
     expect(ics).toContain('SUMMARY:[ENTFALL] D (C5.06)');
     expect(ics).toContain('STATUS:CANCELLED');
-    expect(ics).toContain('Vertretungstext: Entfällt wegen Konferenz');
+    expect(ics.replace(/\r\n[ \t]/g, '')).toContain('Vertretungstext: Entfällt wegen Konferenz');
 
     // Check exam lesson
     expect(ics).toContain('UID:lesson-3@untisplus');

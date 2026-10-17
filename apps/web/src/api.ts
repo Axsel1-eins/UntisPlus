@@ -51,7 +51,18 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   }
   if (res.status === 204) return undefined as T;
   const text = await res.text();
-  const body = text ? (JSON.parse(text) as unknown) : undefined;
+  let body: unknown = undefined;
+  if (text) {
+    try {
+      body = JSON.parse(text);
+    } catch {
+      // Upstream gateway, proxy, or server returned HTML or plain text (e.g. 502 Bad Gateway)
+      if (!res.ok) {
+        throw new ApiError('upstream_error', text.slice(0, 150) || res.statusText, res.status);
+      }
+      throw new ApiError('invalid_json', 'Server returned invalid JSON response', res.status);
+    }
+  }
   if (!res.ok) {
     const err = body as { error?: string; message?: string } | undefined;
     throw new ApiError(err?.error ?? 'error', err?.message ?? res.statusText, res.status);

@@ -55,6 +55,13 @@ export const es = {
       inRoom: 'en el aula',
       startsIn: 'comienza a las',
       changesAlert: '{{count}} cambio(s) en el horario hoy',
+      examsAlert: '{{count}} examen / prueba este día',
+      examsAlert_other: '{{count}} exámenes / pruebas este día',
+      examsAlertToday: 'Hoy: {{count}} examen / prueba',
+      examsAlertToday_other: 'Hoy: {{count}} exámenes / pruebas',
+      viewExams: 'Ver todos los exámenes',
+      examsOnDay: 'Exámenes & Pruebas',
+      unmatchedExam: 'Examen fuera del horario lectivo regular',
     },
     timetable: {
       title: 'Horario',

@@ -162,7 +162,7 @@ export function buildICalendar(options: ICalendarOptions): string {
         lines.push(`LOCATION:${escapeICalText(roomNames)}`);
       }
       if (descParts.length > 0) {
-        lines.push(`DESCRIPTION:${escapeICalText(descParts.join('\\n'))}`);
+        lines.push(`DESCRIPTION:${escapeICalText(descParts.join('\n'))}`);
       }
       lines.push(`STATUS:${isCancelled ? 'CANCELLED' : 'CONFIRMED'}`);
       lines.push('END:VEVENT');
@@ -172,8 +172,8 @@ export function buildICalendar(options: ICalendarOptions): string {
   if (includeExams) {
     const cleanExams = deduplicateExams(exams);
     for (const exam of cleanExams) {
-      const roomNames = exam.rooms.map((r) => r.name).join(', ');
-      const teacherNames = exam.teachers.map((t) => t.name).join(', ');
+      const roomNames = (exam.rooms ?? []).map((r) => r.name).join(', ');
+      const teacherNames = (exam.teachers ?? []).map((t) => t.name).join(', ');
       const subjName = exam.subject?.name || exam.subject?.longName || '';
       const detail = exam.text || exam.type || '';
       const baseTitle = subjName && detail ? `${subjName}: ${detail}` : (subjName || detail || 'Prüfung');
@@ -212,7 +212,7 @@ export function buildICalendar(options: ICalendarOptions): string {
         lines.push(`LOCATION:${escapeICalText(roomNames)}`);
       }
       if (descParts.length > 0) {
-        lines.push(`DESCRIPTION:${escapeICalText(descParts.join('\\n'))}`);
+        lines.push(`DESCRIPTION:${escapeICalText(descParts.join('\n'))}`);
       }
       lines.push('STATUS:CONFIRMED');
 

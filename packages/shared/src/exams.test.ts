@@ -180,5 +180,80 @@ describe('Exam deduplication and merging', () => {
       expect(isExamForLesson(lessonNW2Period6, examB)).toBe(true);
       expect(isExamForLesson(lessonMathPeriod1, examB)).toBe(false);
     });
+
+    it('NEVER matches single-letter subject abbreviations (e.g. E) to unrelated subjects like Deutsch or Chemie', () => {
+      const lessonDeutsch: Lesson = {
+        id: 'lesson-d-1',
+        date: '2026-10-20',
+        startMin: 470,
+        endMin: 520,
+        subjects: [{ id: 2, name: 'D', longName: 'Deutsch' }],
+        teachers: [{ id: 5, name: 'HUB' }],
+        rooms: [{ id: 10, name: 'R101' }],
+        klassen: [{ id: 100, name: '3BHIF' }],
+        status: 'REGULAR',
+      };
+
+      const examEnglish: Exam = {
+        id: 777,
+        date: '2026-10-20',
+        startMin: 470,
+        endMin: 520,
+        subject: { id: 3, name: 'E', longName: 'Englisch' },
+        teachers: [{ id: 5, name: 'HUB' }],
+        rooms: [{ id: 10, name: 'R101' }],
+        type: 'Schularbeit',
+        text: 'Schularbeit Unit 1',
+      };
+
+      // Even though 'DEUTSCH' contains the letter 'E', and 'Schularbeit' contains 'E',
+      // an English exam must NEVER match a German lesson!
+      expect(isExamForLesson(lessonDeutsch, examEnglish)).toBe(false);
+    });
+
+    it('matches a short 15-minute quiz completely contained inside a 50-minute period', () => {
+      const shortQuiz: Exam = {
+        id: 888,
+        date: '2026-10-20',
+        startMin: 485, // 08:05 - 08:20 (15 min test during 07:50 - 08:40 period)
+        endMin: 500,
+        subject: { id: 1, name: 'AM', longName: 'Angewandte Mathematik' },
+        teachers: [{ id: 1, name: 'MÜL' }],
+        rooms: [{ id: 10, name: 'R101' }],
+        type: 'Test',
+        text: 'Kurztest Vektoren',
+      };
+
+      expect(isExamForLesson(lessonMathPeriod1, shortQuiz)).toBe(true);
+    });
+  });
+
+  describe('areExamsDuplicate subject conflict guard', () => {
+    it('NEVER merges two different exams in the same room at the same time', () => {
+      const examMathAula: Exam = {
+        id: 501,
+        date: '2026-10-20',
+        startMin: 480,
+        endMin: 570,
+        subject: { id: 1, name: 'M', longName: 'Mathematik' },
+        teachers: [{ id: 1, name: 'MÜL' }],
+        rooms: [{ id: 99, name: 'Aula' }],
+        type: 'Schularbeit',
+      };
+
+      const examEnglishAula: Exam = {
+        id: 502,
+        date: '2026-10-20',
+        startMin: 480,
+        endMin: 570,
+        subject: { id: 2, name: 'E', longName: 'Englisch' },
+        teachers: [{ id: 2, name: 'BAU' }],
+        rooms: [{ id: 99, name: 'Aula' }], // Shared room!
+        type: 'Schularbeit',
+      };
+
+      // Sharing a room must NOT cause two different subjects to be merged as duplicates
+      expect(areExamsDuplicate(examMathAula, examEnglishAula)).toBe(false);
+    });
   });
 });

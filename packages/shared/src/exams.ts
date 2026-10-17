@@ -55,6 +55,17 @@ export function getExamTypeBadge(rawType?: string): ExamTypeBadge {
 }
 
 
+function matchesSubjectToken(container: string, token: string): boolean {
+  if (!container || !token) return false;
+  if (container === token) return true;
+  // If token is at least 3 characters and container contains it as substring
+  if (token.length >= 3 && container.includes(token)) return true;
+  // Match as discrete word boundary for short abbreviations (e.g. "E" in "Klasse 1A - E")
+  const escaped = token.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const re = new RegExp(`(^|[^A-Z0-9ÄÖÜ])${escaped}([^A-Z0-9ÄÖÜ]|$)`, 'i');
+  return re.test(container);
+}
+
 /**
  * Checks if two exams refer to the exact same test occurring on the same day
  * at the same hour/period (e.g. from multiple class groups, duplicate WebUntis entries,
@@ -74,27 +85,59 @@ export function areExamsDuplicate(e1: Exam, e2: Exam): boolean {
   const base1 = s1.replace(/[-_0-9].*$/, '').trim() || s1;
   const base2 = s2.replace(/[-_0-9].*$/, '').trim() || s2;
 
-  const idMatch = Boolean(e1.subject?.id && e2.subject?.id && e1.subject.id === e2.subject.id);
+  const idMatch = Boolean(e1.subject?.id && e2.subject?.id && e1.subject.id === e2.subject.id && e1.subject.id > 0);
   const nameMatch = Boolean(
-    s1 && s2 && (s1 === s2 || (base1.length >= 2 && base1 === base2) || s1.includes(s2) || s2.includes(s1)),
+    s1 &&
+      s2 &&
+      (s1 === s2 ||
+        (base1.length >= 2 && base1 === base2) ||
+        (s1.length >= 3 && s2.length >= 3 && (s1.includes(s2) || s2.includes(s1)))),
   );
 
   const text1 = (e1.text || '').trim().toUpperCase();
   const text2 = (e2.text || '').trim().toUpperCase();
   const textAndSubjectMatch = Boolean(
-    (s1 && text2 && (text2.includes(s1) || (base1.length >= 2 && text2.includes(base1)))) ||
-      (s2 && text1 && (text1.includes(s2) || (base2.length >= 2 && text1.includes(base2)))),
+    (s1 && text2 && (matchesSubjectToken(text2, s1) || (base1.length >= 2 && matchesSubjectToken(text2, base1)))) ||
+      (s2 && text1 && (matchesSubjectToken(text1, s2) || (base2.length >= 2 && matchesSubjectToken(text1, base2)))),
   );
-  const textMatch = Boolean(text1 && text2 && (text1 === text2 || text1.includes(text2) || text2.includes(text1)));
-
-  const sharedTeacher = e1.teachers.some((t1) =>
-    e2.teachers.some((t2) => (t1.id && t1.id === t2.id) || (t1.name && t1.name === t2.name)),
-  );
-  const sharedRoom = e1.rooms.some((r1) =>
-    e2.rooms.some((r2) => (r1.id && r1.id === r2.id) || (r1.name && r1.name === r2.name)),
+  const textMatch = Boolean(
+    text1 && text2 && (text1 === text2 || (text1.length >= 5 && text2.length >= 5 && (text1.includes(text2) || text2.includes(text1)))),
   );
 
-  return Boolean(idMatch || nameMatch || textAndSubjectMatch || textMatch || sharedTeacher || sharedRoom);
+  const hasSubjectMatch = idMatch || nameMatch || textAndSubjectMatch;
+
+  // If both exams explicitly have subjects, but they do NOT match,
+  // they are definitely different exams (e.g. Math vs English in same room or supervised by same teacher).
+  // Do NOT merge them!
+  if (s1 && s2 && !hasSubjectMatch) {
+    return false;
+  }
+
+  const e1Teachers = e1.teachers ?? [];
+  const e2Teachers = e2.teachers ?? [];
+  const sharedTeacher = e1Teachers.some((t1) =>
+    e2Teachers.some(
+      (t2) =>
+        (t1.id && t2.id && t1.id === t2.id && t1.id > 0) ||
+        (t1.name && t2.name && t1.name.trim().toUpperCase() === t2.name.trim().toUpperCase()),
+    ),
+  );
+
+  const e1Rooms = e1.rooms ?? [];
+  const e2Rooms = e2.rooms ?? [];
+  const sharedRoom = e1Rooms.some((r1) =>
+    e2Rooms.some(
+      (r2) =>
+        (r1.id && r2.id && r1.id === r2.id && r1.id > 0) ||
+        (r1.name && r2.name && r1.name.trim().toUpperCase() === r2.name.trim().toUpperCase()),
+    ),
+  );
+
+  return Boolean(
+    hasSubjectMatch ||
+      (textMatch && (sharedTeacher || sharedRoom || !s1 || !s2)) ||
+      ((!s1 || !s2) && (sharedTeacher || sharedRoom)),
+  );
 }
 
 /**
@@ -103,12 +146,12 @@ export function areExamsDuplicate(e1: Exam, e2: Exam): boolean {
  */
 export function mergeExams(e1: Exam, e2: Exam): Exam {
   // Merge teachers without duplicates
-  const mergedTeachers = [...e1.teachers];
-  for (const t of e2.teachers) {
+  const mergedTeachers = [...(e1.teachers ?? [])];
+  for (const t of e2.teachers ?? []) {
     if (
       !mergedTeachers.some(
         (existing) =>
-          (existing.id && t.id && existing.id === t.id) ||
+          (existing.id && t.id && existing.id === t.id && existing.id > 0) ||
           (existing.name && t.name && existing.name.trim().toUpperCase() === t.name.trim().toUpperCase()),
       )
     ) {
@@ -117,12 +160,12 @@ export function mergeExams(e1: Exam, e2: Exam): Exam {
   }
 
   // Merge rooms without duplicates
-  const mergedRooms = [...e1.rooms];
-  for (const r of e2.rooms) {
+  const mergedRooms = [...(e1.rooms ?? [])];
+  for (const r of e2.rooms ?? []) {
     if (
       !mergedRooms.some(
         (existing) =>
-          (existing.id && r.id && existing.id === r.id) ||
+          (existing.id && r.id && existing.id === r.id && existing.id > 0) ||
           (existing.name && r.name && existing.name.trim().toUpperCase() === r.name.trim().toUpperCase()),
       )
     ) {
@@ -220,10 +263,12 @@ export function isExamForLesson(lesson: Lesson, exam: Exam): boolean {
 
   // 2. Strict time match:
   // Lessons in WebUntis are typically 45-50 minutes.
-  // Overlap must be significant (>= 20 minutes) or start times within 15 minutes.
+  // Overlap must be significant (>= 20 minutes), start times within 15 minutes,
+  // or exam is fully contained within the lesson (e.g. 15-min short test).
   const overlap = Math.max(0, Math.min(lesson.endMin, exam.endMin) - Math.max(lesson.startMin, exam.startMin));
   const startDiff = Math.abs(lesson.startMin - exam.startMin);
-  const isTimeMatch = overlap >= 20 || startDiff <= 15;
+  const isContained = exam.startMin >= lesson.startMin && exam.endMin <= lesson.endMin;
+  const isTimeMatch = overlap >= 20 || startDiff <= 15 || isContained;
   if (!isTimeMatch) return false;
 
   // 3. Subject / Teacher / Room match
@@ -252,14 +297,44 @@ export function isExamForLesson(lesson: Lesson, exam: Exam): boolean {
       const baseExam = eSubjName.replace(/[-_0-9].*$/, '').trim() || eSubjName;
       if (baseLesson.length >= 2 && baseExam.length >= 2 && baseLesson === baseExam) return true;
 
-      // Long name / full title match
-      if (sLong && eSubjLong && (sLong === eSubjLong || sLong.includes(eSubjLong) || eSubjLong.includes(sLong))) return true;
-      if (sLong && eSubjName && (sLong.includes(eSubjName) || eSubjName.includes(sLong))) return true;
-      if (sName && eSubjLong && (eSubjLong.includes(sName) || sName.includes(eSubjLong))) return true;
+      // Long name / full title match (require length >= 3 or exact)
+      if (
+        sLong &&
+        eSubjLong &&
+        (sLong === eSubjLong ||
+          (sLong.length >= 3 && eSubjLong.length >= 3 && (sLong.includes(eSubjLong) || eSubjLong.includes(sLong))))
+      ) {
+        return true;
+      }
+      if (
+        sLong &&
+        eSubjName &&
+        (sLong === eSubjName ||
+          (sLong.length >= 3 && eSubjName.length >= 3 && (sLong.includes(eSubjName) || eSubjName.includes(sLong))))
+      ) {
+        return true;
+      }
+      if (
+        sName &&
+        eSubjLong &&
+        (sName === eSubjLong ||
+          (sName.length >= 3 && eSubjLong.length >= 3 && (eSubjLong.includes(sName) || sName.includes(eSubjLong))))
+      ) {
+        return true;
+      }
 
-      // Exam text or type explicitly mentions this lesson's subject code or name
-      if (eText && (eText.includes(sName) || (baseLesson.length >= 2 && eText.includes(baseLesson)))) return true;
-      if (eType && (eType.includes(sName) || (baseLesson.length >= 2 && eType.includes(baseLesson)))) return true;
+      // Exam text explicitly mentions this lesson's subject code or name
+      if (
+        eText &&
+        (matchesSubjectToken(eText, sName) || (baseLesson.length >= 2 && matchesSubjectToken(eText, baseLesson)))
+      ) {
+        return true;
+      }
+
+      // Exam type only matches if subject code is at least 3 chars (never match single letter like "E" in "SCHULARBEIT" or "TEST")
+      if (eType && sName.length >= 3 && eType.includes(sName)) {
+        return true;
+      }
 
       return false;
     });
@@ -275,8 +350,10 @@ export function isExamForLesson(lesson: Lesson, exam: Exam): boolean {
 
   // Fallback when subject is missing from lesson or exam:
   // Check shared teacher
-  const sharedTeacher = lesson.teachers?.some((t1) =>
-    exam.teachers?.some(
+  const lTeachers = lesson.teachers ?? [];
+  const eTeachers = exam.teachers ?? [];
+  const sharedTeacher = lTeachers.some((t1) =>
+    eTeachers.some(
       (t2) =>
         (t1.id && t2.id && t1.id === t2.id && t1.id > 0) ||
         (t1.name && t2.name && t1.name.trim().toUpperCase() === t2.name.trim().toUpperCase()),

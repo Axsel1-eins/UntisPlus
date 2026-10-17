@@ -1,11 +1,11 @@
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { addDays, deduplicateExams, isExamForLesson, type Exam, type Holiday, type Lesson } from '@untisplus/shared';
+import { addDays, deduplicateExams, isExamForLesson, type Exam, type Holiday, type Homework, type Lesson } from '@untisplus/shared';
 import { api } from '../api.js';
 import { useApp } from '../store.js';
 import { useEffectiveTarget, useModule, useWeekLessons } from '../data.js';
 import { useNow } from '../hooks.js';
-import { dowShort, formatDay, formatTime, lessonsForDay, todayIso } from '../lib.js';
+import { dowShort, formatDay, formatTime, lessonsForDay, primarySubject, todayIso } from '../lib.js';
 import { LessonCard } from '../components/LessonCard.js';
 import { LessonDetail } from '../components/LessonDetail.js';
 import { DayExamBanner } from '../components/DayExamBanner.js';
@@ -66,7 +66,32 @@ export function TodayView() {
     () => api.exams(addDays(weekStart, -7), addDays(weekStart, 14)),
     [weekStart],
   );
+  const hwMod = useModule<Homework>(
+    () => api.homework(addDays(weekStart, -7), addDays(weekStart, 14)),
+    [weekStart],
+  );
   const cleanExams = useMemo(() => deduplicateExams(examsMod.items), [examsMod.items]);
+
+  const detailHomework = useMemo(() => {
+    if (!detail) return [];
+    const subj = primarySubject(detail);
+    const sName = (subj?.name || '').trim().toUpperCase();
+    return hwMod.items.filter((h) => {
+      const isDue = h.dueDate === detail.date || h.date === detail.date;
+      if (!isDue) return false;
+      if (!subj) return true;
+      if (h.subject?.id && subj.id && h.subject.id === subj.id) return true;
+      const hName = (h.subject?.name || '').trim().toUpperCase();
+      if (
+        hName &&
+        sName &&
+        (hName === sName || (hName.length >= 3 && sName.length >= 3 && (hName.includes(sName) || sName.includes(hName))))
+      ) {
+        return true;
+      }
+      return false;
+    });
+  }, [detail, hwMod.items]);
 
   const weekDays = useMemo(() => Array.from({ length: 7 }, (_, i) => addDays(weekStart, i)), [weekStart]);
   const visibleDays = weekDays.filter((d) => !isWeekendIso(d));
@@ -381,6 +406,7 @@ export function TodayView() {
             lesson={detail}
             role={role}
             linkedExams={cleanExams.filter((e) => isExamForLesson(detail, e))}
+            linkedHomework={detailHomework}
             onClose={() => setDetail(null)}
           />
         )}

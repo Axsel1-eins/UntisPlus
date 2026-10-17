@@ -397,14 +397,14 @@ export function LessonDetail({
                     {ex.text}
                   </div>
                 )}
-                {ex.rooms.length > 0 && (
+                {(ex.rooms ?? []).length > 0 && (
                   <div className="tiny muted">
-                    🏛️ Raum: {ex.rooms.map((r) => r.name).join(', ')}
+                    🏛️ Raum: {(ex.rooms ?? []).map((r) => r.name).join(', ')}
                   </div>
                 )}
-                {ex.teachers.length > 0 && (
+                {(ex.teachers ?? []).length > 0 && (
                   <div className="tiny muted">
-                    👨‍🏫 Lehrkraft: {ex.teachers.map((t) => t.name).join(', ')}
+                    👨‍🏫 Lehrkraft: {(ex.teachers ?? []).map((t) => t.name).join(', ')}
                   </div>
                 )}
               </div>
