@@ -778,7 +778,7 @@ export function ExamsView() {
           <div className="card pad col" style={{ gap: 10 }}>
             <div className="row" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
               <span style={{ fontWeight: 800, fontSize: 15 }}>
-                📚 Meine Fächer ({visibleMySubjects.length})
+                {t('exams.mySubjectsCount', { count: visibleMySubjects.length })}
               </span>
               <span className="tiny muted">Noten werden automatisch gespeichert</span>
             </div>
@@ -786,7 +786,7 @@ export function ExamsView() {
             <div className="col" style={{ gap: 8 }}>
               {visibleMySubjects.length === 0 ? (
                 <div className="small muted" style={{ padding: '8px 0' }}>
-                  Keine passenden Fächer gefunden.
+                  {t('exams.noMatchingSubjects')}
                 </div>
               ) : (
                 visibleMySubjects.map((sub) => {
@@ -908,15 +908,15 @@ export function ExamsView() {
               >
                 <span>
                   {showAllSchoolSubjects
-                    ? '▲ Weitere Schulfächer ausblenden'
-                    : `➕ Weitere Schulfächer anzeigen (${otherSubjects.length} Fächer)`}
+                    ? t('exams.hideOtherSubjects')
+                    : t('exams.showOtherSubjects', { count: otherSubjects.length })}
                 </span>
               </button>
 
               {showAllSchoolSubjects && (
                 <div className="card pad col" style={{ gap: 8, background: 'var(--surface-2)' }}>
                   <div className="small muted">
-                    Alle weiteren Fächer der Schule ({visibleOtherSubjects.length}):
+                    {t('exams.allOtherSubjects', { count: visibleOtherSubjects.length })}
                   </div>
                   <div className="col" style={{ gap: 8 }}>
                     {visibleOtherSubjects.map((sub) => {

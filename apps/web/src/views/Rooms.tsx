@@ -352,7 +352,7 @@ export function RoomsView() {
                         e.stopPropagation();
                         toggleFavorite('rooms', occ.room.id);
                       }}
-                      title={isFav ? 'Aus Favoriten entfernen' : 'Zu Favoriten hinzufügen'}
+                      title={isFav ? t('rooms.removeFromFav') : t('rooms.addToFav')}
                     >
                       {isFav ? '⭐' : '☆'}
                     </button>

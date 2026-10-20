@@ -965,13 +965,13 @@ export function CustomizeView() {
           {/* Gleichmäßige Stunden-Höhe (Raster-Skalierung) */}
           <div className="col" style={{ gap: 6, paddingTop: 10, borderTop: '1px solid var(--border)' }}>
             <div className="row" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontWeight: 600, fontSize: 14 }}>📏 Gleichmäßige Stunden-Höhe</span>
+              <span style={{ fontWeight: 600, fontSize: 14 }}>{t('customize.periodHeightTitle')}</span>
               <span style={{ fontVariantNumeric: 'tabular-nums', fontWeight: 700, color: 'var(--accent)' }}>
                 {c.periodHeight ?? 84} px
               </span>
             </div>
             <span className="tiny muted">
-              Hält alle Periodenzeilen exakt gleich hoch und verhindert Layout-Verschiebungen bei Ausfällen oder geteilten Gruppen.
+              {t('customize.periodHeightHint')}
             </span>
             <input
               type="range"
@@ -986,52 +986,52 @@ export function CustomizeView() {
 
           {/* Uhrzeiten-Format in Perioden-Spalte */}
           <div className="col" style={{ gap: 6, paddingTop: 10, borderTop: '1px solid var(--border)' }}>
-            <span style={{ fontWeight: 600, fontSize: 14 }}>Uhrzeiten in der Perioden-Spalte</span>
+            <span style={{ fontWeight: 600, fontSize: 14 }}>{t('customize.periodTimeFormatTitle')}</span>
             <span className="tiny muted">
-              Zeigt Start- und Endzeit der Stunde (z. B. 15:50 – 16:40) oder nur die Startzeit.
+              {t('customize.periodTimeFormatHint')}
             </span>
             <Segmented
-              label="Uhrzeiten-Format"
+              label={t('customize.periodTimeFormatTitle')}
               value={c.periodTimeFormat ?? 'start-end'}
               onChange={(v) => updateCustomization({ periodTimeFormat: v as any })}
               options={[
-                { value: 'start-end', label: 'Start & Ende (z. B. 15:50 – 16:40)' },
-                { value: 'start-only', label: 'Nur Startzeit' },
+                { value: 'start-end', label: t('customize.periodTimeStartEnd') },
+                { value: 'start-only', label: t('customize.periodTimeStartOnly') },
               ]}
             />
           </div>
 
           {/* Leere Abendstunden trimmen */}
           <div className="col" style={{ gap: 6, paddingTop: 10, borderTop: '1px solid var(--border)' }}>
-            <span style={{ fontWeight: 600, fontSize: 14 }}>Stundenplan-Länge (Abendstunden)</span>
+            <span style={{ fontWeight: 600, fontSize: 14 }}>{t('customize.trimPeriodsTitle')}</span>
             <span className="tiny muted">
-              Beschränkt die Zeilen automatisch auf die aktive Schulzeit (z. B. bis 16:40), statt leere Abendschul-Zeilen bis 21:50 anzuzeigen.
+              {t('customize.trimPeriodsHint')}
             </span>
             <Segmented
-              label="Abendstunden"
+              label={t('customize.trimPeriodsTitle')}
               value={c.trimEmptyPeriods !== false ? 'trim' : 'all'}
               onChange={(v) => updateCustomization({ trimEmptyPeriods: v === 'trim' })}
               options={[
-                { value: 'trim', label: 'Automatisch trimmen (bis Schulschluss)' },
-                { value: 'all', label: 'Alle 17 Zeilen (bis 21:50)' },
+                { value: 'trim', label: t('customize.trimPeriodsAuto') },
+                { value: 'all', label: t('customize.trimPeriodsAll') },
               ]}
             />
           </div>
 
           {/* Ferien-Darstellung */}
           <div className="col" style={{ gap: 6, paddingTop: 10, borderTop: '1px solid var(--border)' }}>
-            <span style={{ fontWeight: 600, fontSize: 14 }}>Ferien- & Feiertags-Anzeige</span>
+            <span style={{ fontWeight: 600, fontSize: 14 }}>{t('customize.holidayDisplayTitle')}</span>
             <span className="tiny muted">
-              Wie schulfreie Tage und Ferienwochen (z. B. Herbstferien) dargestellt werden.
+              {t('customize.holidayDisplayHint')}
             </span>
             <Segmented
-              label="Ferien-Anzeige"
+              label={t('customize.holidayDisplayTitle')}
               value={c.holidayDisplayStyle ?? 'both'}
               onChange={(v) => updateCustomization({ holidayDisplayStyle: v as any })}
               options={[
-                { value: 'both', label: '🎉 Banner & Tageskarten' },
-                { value: 'banner', label: 'Nur Banner' },
-                { value: 'card', label: 'Nur Tageskarten' },
+                { value: 'both', label: t('customize.holidayDisplayBoth') },
+                { value: 'banner', label: t('customize.holidayDisplayBanner') },
+                { value: 'card', label: t('customize.holidayDisplayCard') },
               ]}
             />
           </div>
@@ -1073,35 +1073,35 @@ export function CustomizeView() {
         <div className="card pad col" style={{ gap: 16 }}>
           {/* Anordnung paralleler Stunden (Gruppen & Vertretungen) */}
           <div className="col" style={{ gap: 6 }}>
-            <span style={{ fontWeight: 600, fontSize: 14 }}>Anordnung paralleler Stunden (Gruppen & Vertretungen)</span>
+            <span style={{ fontWeight: 600, fontSize: 14 }}>{t('customize.parallelLayoutTitle')}</span>
             <span className="tiny muted">
-              Bestimmt, ob parallele Stunden (z. B. Entfall & Vertretung, Religion/Ethik oder Programmieren-Gruppen) nebeneinander oder übereinander dargestellt werden.
+              {t('customize.parallelLayoutHint')}
             </span>
             <Segmented
-              label="Paralleles Layout"
+              label={t('customize.parallelLayoutTitle')}
               value={c.parallelLessonLayout ?? 'side-by-side'}
               onChange={(v) => updateCustomization({ parallelLessonLayout: v as 'side-by-side' | 'stacked' })}
               options={[
-                { value: 'side-by-side', label: '↔️ Nebeneinander' },
-                { value: 'stacked', label: '↕️ Übereinander' },
+                { value: 'side-by-side', label: t('customize.parallelSideBySide') },
+                { value: 'stacked', label: t('customize.parallelStacked') },
               ]}
             />
           </div>
 
           {/* Vertretungs-Filtermodus */}
           <div className="col" style={{ gap: 6, paddingTop: 10, borderTop: '1px solid var(--border)' }}>
-            <span style={{ fontWeight: 600, fontSize: 14 }}>Vertretungs-Filtermodus</span>
+            <span style={{ fontWeight: 600, fontSize: 14 }}>{t('customize.substDisplayTitle')}</span>
             <span className="tiny muted">
-              Wähle, ob bei einer Vertretung nur die Vertretung angezeigt werden soll oder beide (Entfall daneben/darüber).
+              {t('customize.substDisplayHint')}
             </span>
             <Segmented
-              label="Vertretungs-Filtermodus"
+              label={t('customize.substDisplayTitle')}
               value={c.substDisplayMode ?? 'both'}
               onChange={(v) => updateCustomization({ substDisplayMode: v as any })}
               options={[
-                { value: 'both', label: 'Beide (Entfall & Vertretung)' },
-                { value: 'subst-only', label: 'Nur Vertretung anzeigen' },
-                { value: 'cancelled-only', label: 'Nur Entfall anzeigen' },
+                { value: 'both', label: t('customize.substDisplayBoth') },
+                { value: 'subst-only', label: t('customize.substDisplaySubstOnly') },
+                { value: 'cancelled-only', label: t('customize.substDisplayCancelledOnly') },
               ]}
             />
           </div>
@@ -1115,12 +1115,12 @@ export function CustomizeView() {
               value={c.cancellationStyle ?? 'strikethrough'}
               onChange={(v) => updateCustomization({ cancellationStyle: v as CancellationStyle })}
               options={[
-                { value: 'strikethrough', label: 'Durchgestrichen' },
-                { value: 'ghost', label: '👻 Ghost' },
-                { value: 'neon', label: '⚡ Neon' },
-                { value: 'redacted', label: '⬛ Zensiert' },
-                { value: 'transparent', label: 'Transp.' },
-                { value: 'hidden', label: 'Verstecken' },
+                { value: 'strikethrough', label: t('customize.cancelStrikethrough') },
+                { value: 'ghost', label: t('customize.cancelGhost') },
+                { value: 'neon', label: t('customize.cancelNeon') },
+                { value: 'redacted', label: t('customize.cancelRedacted') },
+                { value: 'transparent', label: t('customize.cancelTransparent') },
+                { value: 'hidden', label: t('customize.cancelHidden') },
               ]}
             />
           </div>
@@ -1134,28 +1134,28 @@ export function CustomizeView() {
               value={c.substitutionStyle ?? 'highlight'}
               onChange={(v) => updateCustomization({ substitutionStyle: v as SubstitutionStyle })}
               options={[
-                { value: 'highlight', label: 'Hervorgehoben' },
-                { value: 'neon', label: '⚡ Neon Cyber' },
-                { value: 'glass', label: '💎 Glass' },
-                { value: 'replaced', label: 'Statt / Diff' },
-                { value: 'badge', label: 'Badge' },
+                { value: 'highlight', label: t('customize.substHighlight') },
+                { value: 'neon', label: t('customize.substNeon') },
+                { value: 'glass', label: t('customize.substGlass') },
+                { value: 'replaced', label: t('customize.substReplaced') },
+                { value: 'badge', label: t('customize.substBadge') },
               ]}
             />
           </div>
 
           {/* Anordnung bei Vertretung & Entfall (Split-Card Side-by-Side) */}
           <div className="col" style={{ gap: 6, paddingTop: 10, borderTop: '1px solid var(--border)' }}>
-            <span style={{ fontWeight: 600, fontSize: 14 }}>Priorität bei Vertretung & Entfall</span>
+            <span style={{ fontWeight: 600, fontSize: 14 }}>{t('customize.splitOrderTitle')}</span>
             <span className="tiny muted">
-              Bestimmt die Reihenfolge, wenn eine Stunde entfällt und zeitgleich vertreten wird.
+              {t('customize.splitOrderHint')}
             </span>
             <Segmented
-              label="Split-Anordnung"
+              label={t('customize.splitOrderTitle')}
               value={c.splitSubstOrder ?? 'subst-first'}
               onChange={(v) => updateCustomization({ splitSubstOrder: v as 'subst-first' | 'cancelled-first' })}
               options={[
-                { value: 'subst-first', label: 'Vertretung (links/oben) · Entfall (rechts/unten)' },
-                { value: 'cancelled-first', label: 'Entfall (links/oben) · Vertretung (rechts/unten)' },
+                { value: 'subst-first', label: t('customize.splitOrderSubstFirst') },
+                { value: 'cancelled-first', label: t('customize.splitOrderCancelledFirst') },
               ]}
             />
           </div>
@@ -1178,10 +1178,10 @@ export function CustomizeView() {
 
       {/* Stundenplan-Symbole & Badges */}
       <div className="section">
-        <h2>🏷️ Stundenplan-Symbole & Badges</h2>
+        <h2>{t('customize.badgesTitle')}</h2>
         <div className="card pad col" style={{ gap: 14 }}>
           <div className="small muted">
-            Passe die Symbole an, die auf Stundenkarten für Notizen, Hausaufgaben und Prüfungen angezeigt werden.
+            {t('customize.badgesHint')}
           </div>
 
           {/* Toggle Badges */}
@@ -1191,7 +1191,7 @@ export function CustomizeView() {
               checked={c.showLessonBadges !== false}
               onChange={(e) => updateCustomization({ showLessonBadges: e.target.checked })}
             />
-            <span style={{ fontWeight: 600, fontSize: 14 }}>Stunden-Symbole & Badges einblenden</span>
+            <span style={{ fontWeight: 600, fontSize: 14 }}>{t('customize.showBadgesToggle')}</span>
           </label>
 
           {c.showLessonBadges !== false && (
@@ -1199,7 +1199,7 @@ export function CustomizeView() {
               {/* Info Icon */}
               <div className="col" style={{ gap: 4 }}>
                 <span className="small" style={{ fontWeight: 600 }}>
-                  Symbol für Zusatzinformationen & Notizen:
+                  {t('customize.iconInfoLabel')}
                 </span>
                 <div className="row" style={{ gap: 8, alignItems: 'center' }}>
                   <input
@@ -1228,7 +1228,7 @@ export function CustomizeView() {
               {/* Homework Icon */}
               <div className="col" style={{ gap: 4 }}>
                 <span className="small" style={{ fontWeight: 600 }}>
-                  Symbol für Aufgaben & Hausaufgaben:
+                  {t('customize.iconHomeworkLabel')}
                 </span>
                 <div className="row" style={{ gap: 8, alignItems: 'center' }}>
                   <input
@@ -1257,7 +1257,7 @@ export function CustomizeView() {
               {/* Exam Icon */}
               <div className="col" style={{ gap: 4 }}>
                 <span className="small" style={{ fontWeight: 600 }}>
-                  Symbol für Prüfungen & Schularbeiten:
+                  {t('customize.iconExamLabel')}
                 </span>
                 <div className="row" style={{ gap: 8, alignItems: 'center' }}>
                   <input
@@ -1285,20 +1285,20 @@ export function CustomizeView() {
               {/* Prüfungs-Hervorhebung */}
               <div className="col" style={{ gap: 6, paddingTop: 10, borderTop: '1px solid var(--border)' }}>
                 <span className="small" style={{ fontWeight: 600 }}>
-                  Prüfungs-Hervorhebung im Stundenplan:
+                  {t('customize.examHighlightTitle')}
                 </span>
                 <span className="tiny muted">
-                  Visueller Spezialeffekt für Stunden mit anstehenden Schularbeiten oder Tests.
+                  {t('customize.examHighlightHint')}
                 </span>
                 <Segmented
-                  label="Prüfungs-Hervorhebung"
+                  label={t('customize.examHighlightTitle')}
                   value={c.examHighlight ?? 'pulse-glow'}
                   onChange={(v) => updateCustomization({ examHighlight: v as any })}
                   options={[
-                    { value: 'pulse-glow', label: '✨ Pulsieren' },
-                    { value: 'border-bold', label: '🚨 Fetter Rand' },
-                    { value: 'card-accent', label: '🎯 Gradient' },
-                    { value: 'none', label: 'Keine' },
+                    { value: 'pulse-glow', label: t('customize.examHighlightPulse') },
+                    { value: 'border-bold', label: t('customize.examHighlightBorder') },
+                    { value: 'card-accent', label: t('customize.examHighlightGradient') },
+                    { value: 'none', label: t('customize.examHighlightNone') },
                   ]}
                 />
               </div>
@@ -1536,10 +1536,10 @@ export function CustomizeView() {
               value={String(c.uiScale)}
               onChange={(v) => updateCustomization({ uiScale: Number(v) })}
               options={[
-                { value: '90', label: '90% (Kompakt)' },
-                { value: '100', label: '100% (Standard)' },
-                { value: '110', label: '110% (Groß)' },
-                { value: '120', label: '120% (Sehr groß)' },
+                { value: '90', label: t('customize.scaleCompact') },
+                { value: '100', label: t('customize.scaleStandard') },
+                { value: '110', label: t('customize.scaleLarge') },
+                { value: '120', label: t('customize.scaleXLarge') },
               ]}
             />
           </div>
@@ -1594,7 +1594,7 @@ export function CustomizeView() {
           <div className="row" style={{ justifyContent: 'space-between', alignItems: 'center', paddingTop: 8, borderTop: '1px solid var(--border)' }}>
             <div className="col" style={{ gap: 2 }}>
               <span style={{ fontWeight: 600, fontSize: 14 }}>🔍 {t('rooms.filterFreeOnly')}</span>
-              <span className="tiny muted">Zeigt beim Öffnen des Raumfinders standardmäßig nur aktuell freie Räume an.</span>
+              <span className="tiny muted">{t('rooms.filterFreeOnlyHint')}</span>
             </div>
             <input
               type="checkbox"

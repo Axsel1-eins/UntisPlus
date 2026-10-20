@@ -195,7 +195,7 @@ export function ThemeStudioView() {
         border: '#e2e8f0',
       }));
     }
-    toast('✨ Harmonische Palette aus Akzentfarbe generiert!', 'success');
+    toast(t('themeStudio.paletteGenerated'), 'success');
   }
 
   function handleCopyCss() {
@@ -203,7 +203,7 @@ export function ThemeStudioView() {
       .map(([k, v]) => `  --${k}: ${v};`)
       .join('\n');
     navigator.clipboard?.writeText(`:root {\n${css}\n}`);
-    toast('CSS-Variablen in die Zwischenablage kopiert!', 'success');
+    toast(t('themeStudio.cssCopied'), 'success');
   }
 
   function handleSave() {
@@ -267,17 +267,17 @@ export function ThemeStudioView() {
       accent: toHex(computed.accent || '#6366f1'),
       radius: parseInt(computed.radius ?? '10', 10) || 10,
     });
-    toast(`${theme.name} loaded as template`, 'info');
+    toast(t('themeStudio.templateLoaded', { name: theme.name }), 'info');
   }
 
-  const COLOR_FIELDS: { key: keyof EditableTokens; labelKey: string; hint: string }[] = [
-    { key: 'bg', labelKey: 'themeStudio.bg', hint: 'Hintergrund der gesamten App' },
-    { key: 'surface', labelKey: 'themeStudio.surface', hint: 'Karten, Module & Container' },
-    { key: 'surface-2', labelKey: 'themeStudio.surface2', hint: 'Eingabefelder, Chips & Tabellen' },
-    { key: 'text', labelKey: 'themeStudio.text', hint: 'Primäre Schriftfarbe' },
-    { key: 'muted', labelKey: 'themeStudio.muted', hint: 'Sekundäre Notizen & Details' },
-    { key: 'border', labelKey: 'themeStudio.border', hint: 'Trennlinien und Rahmen' },
-    { key: 'accent', labelKey: 'themeStudio.accent', hint: 'Schaltflächen, Highlights & Badges' },
+  const COLOR_FIELDS: { key: keyof EditableTokens; labelKey: string; hintKey: string }[] = [
+    { key: 'bg', labelKey: 'themeStudio.bg', hintKey: 'themeStudio.bgHint' },
+    { key: 'surface', labelKey: 'themeStudio.surface', hintKey: 'themeStudio.surfaceHint' },
+    { key: 'surface-2', labelKey: 'themeStudio.surface2', hintKey: 'themeStudio.surface2Hint' },
+    { key: 'text', labelKey: 'themeStudio.text', hintKey: 'themeStudio.textHint' },
+    { key: 'muted', labelKey: 'themeStudio.muted', hintKey: 'themeStudio.mutedHint' },
+    { key: 'border', labelKey: 'themeStudio.border', hintKey: 'themeStudio.borderHint' },
+    { key: 'accent', labelKey: 'themeStudio.accent', hintKey: 'themeStudio.accentHint' },
   ];
 
   return (
@@ -422,12 +422,12 @@ export function ThemeStudioView() {
                         borderRadius: 6,
                         cursor: 'pointer',
                       }}
-                      title={f.hint}
+                      title={t(f.hintKey)}
                     />
 
                     <div className="col" style={{ flex: 1, minWidth: 0, gap: 1 }}>
                       <span style={{ fontWeight: 650, fontSize: 13 }}>{t(f.labelKey)}</span>
-                      <span className="tiny muted nowrap">{f.hint}</span>
+                      <span className="tiny muted nowrap">{t(f.hintKey)}</span>
                     </div>
 
                     <input
