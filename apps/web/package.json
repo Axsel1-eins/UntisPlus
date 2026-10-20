@@ -10,6 +10,8 @@
     "typecheck": "tsc --noEmit",
     "icons": "node scripts/gen-icons.mjs",
     "cap:sync": "npx cap sync",
+    "cap:sync:android": "npx cap sync android",
+    "cap:sync:ios": "npx cap sync ios",
     "cap:android": "npx cap open android",
     "cap:ios": "npx cap open ios",
     "test": "vitest run --passWithNoTests"

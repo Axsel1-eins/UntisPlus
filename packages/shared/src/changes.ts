@@ -24,6 +24,10 @@ export interface LessonChange {
   kind: ChangeKind;
   /** Raw substitution note, if the source lesson carried one. */
   text?: string;
+  subject?: string;
+  room?: string;
+  teacher?: string;
+  reason?: string;
 }
 
 function sameRefs(a: { id: number }[], b: { id: number }[]): boolean {

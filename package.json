@@ -16,8 +16,8 @@
     "dev:web": "npm run dev -w @untisplus/web",
     "build:apk": "./scripts/build-apk.sh",
     "build:ipa": "./scripts/build-ipa.sh",
-    "cap:sync:android": "npm --prefix apps/web run cap:sync android",
-    "cap:sync:ios": "npm --prefix apps/web run cap:sync ios"
+    "cap:sync:android": "npm run --workspace=@untisplus/web cap:sync:android",
+    "cap:sync:ios": "npm run --workspace=@untisplus/web cap:sync:ios"
   },
   "devDependencies": {
     "@capacitor/cli": "^8.5.3",

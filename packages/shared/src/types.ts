@@ -214,6 +214,8 @@ export interface SessionSummary {
   children?: ChildProfile[];
   /** Present for anonymous sessions that can only read public data. */
   readOnly: boolean;
+  /** Opaque session token for bearer header authentication (native mobile apps & cross-origin PWAs). */
+  token?: string;
 }
 
 /** A change detected between two snapshots (used by the notification engine). */

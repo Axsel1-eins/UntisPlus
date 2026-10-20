@@ -69,8 +69,13 @@ export async function createServer(deps: ServerDeps = {}): Promise<FastifyInstan
     app.log.warn('FIXTURES=1 — serving canned data, no upstream WebUntis calls.');
   }
 
-  function requireSession(req: { cookies: Record<string, string | undefined> }): StoredSession {
-    const token = req.cookies[COOKIE];
+  function requireSession(req: { cookies: Record<string, string | undefined>; headers?: Record<string, unknown> }): StoredSession {
+    const cookieToken = req.cookies[COOKIE];
+    const authHeader = typeof req.headers?.authorization === 'string' ? req.headers.authorization : undefined;
+    const headerToken =
+      (typeof req.headers?.['x-session-token'] === 'string' ? req.headers['x-session-token'] : undefined) ||
+      (authHeader?.startsWith('Bearer ') ? authHeader.slice(7).trim() : undefined);
+    const token = cookieToken || headerToken;
     const session = getSession(token);
     if (!session) {
       const err = new Error('Not logged in');
@@ -127,9 +132,17 @@ export async function createServer(deps: ServerDeps = {}): Promise<FastifyInstan
         school: { ...FIXTURE_SCHOOL, loginName: input.school || FIXTURE_SCHOOL.loginName },
         mode: 'anonymous',
         readOnly: true,
+        token: 'fixture',
       };
-      // No real session in fixture mode; the cookie is just a marker.
-      reply.setCookie(COOKIE, 'fixture', { httpOnly: true, sameSite: 'lax', path: '/' });
+      // Extended cookie lifetime (90 days) for persistent PWA & mobile login
+      reply.setCookie(COOKIE, 'fixture', {
+        httpOnly: true,
+        sameSite: 'lax',
+        secure: process.env.NODE_ENV === 'production',
+        path: '/',
+        maxAge: 60 * 60 * 24 * 90,
+      });
+      reply.header('x-session-token', 'fixture');
       return summary;
     }
 
@@ -139,34 +152,52 @@ export async function createServer(deps: ServerDeps = {}): Promise<FastifyInstan
       sameSite: 'lax',
       secure: process.env.NODE_ENV === 'production',
       path: '/',
-      maxAge: 60 * 60 * 8,
+      maxAge: 60 * 60 * 24 * 90,
     });
-    return summarize(session);
+    reply.header('x-session-token', session.token);
+    return {
+      ...summarize(session),
+      token: session.token,
+    };
   };
 
   app.post('/api/session', handleSessionLogin);
   app.post('/api/session/login', handleSessionLogin);
 
   app.get('/api/session', async (req, reply) => {
+    const authHeader = typeof req.headers.authorization === 'string' ? req.headers.authorization : undefined;
+    const headerToken =
+      (typeof req.headers['x-session-token'] === 'string' ? req.headers['x-session-token'] : undefined) ||
+      (authHeader?.startsWith('Bearer ') ? authHeader.slice(7).trim() : undefined);
+    const token = req.cookies[COOKIE] || headerToken;
+
     if (isReqFixture(req)) {
-      // Only "logged in" once the fixture marker cookie is present, so onboarding stays reachable.
-      if (req.cookies[COOKIE] !== 'fixture') {
+      if (token !== 'fixture') {
         return reply.code(401).send({ error: 'not_authenticated' });
       }
       return {
         school: FIXTURE_SCHOOL,
         mode: 'anonymous',
         readOnly: true,
+        token: 'fixture',
       } satisfies SessionSummary;
     }
-    const token = req.cookies[COOKIE];
+
     const session = getSession(token);
     if (!session) return reply.code(401).send({ error: 'not_authenticated' });
-    return summarize(session);
+    return {
+      ...summarize(session),
+      token: session.token,
+    };
   });
 
   app.delete('/api/session', async (req, reply) => {
-    if (!isReqFixture(req)) await destroySession(req.cookies[COOKIE]);
+    const authHeader = typeof req.headers.authorization === 'string' ? req.headers.authorization : undefined;
+    const headerToken =
+      (typeof req.headers['x-session-token'] === 'string' ? req.headers['x-session-token'] : undefined) ||
+      (authHeader?.startsWith('Bearer ') ? authHeader.slice(7).trim() : undefined);
+    const token = req.cookies[COOKIE] || headerToken;
+    if (!isReqFixture(req)) await destroySession(token);
     reply.clearCookie(COOKIE, { path: '/' });
     return { ok: true };
   });

@@ -2,9 +2,11 @@ import { useEffect, useRef } from 'react';
 import {
   addDays,
   diffLessons,
+  getExamTypeBadge,
   minutesToTime,
   mondayOf,
   type ChangeKind,
+  type Exam,
   type Lesson,
   type LessonChange,
 } from '@untisplus/shared';
@@ -15,18 +17,214 @@ import { todayIso } from './lib.js';
 import { emitModEvent } from './mods.js';
 import i18n from './i18n.js';
 
-/**
- * Change detection.
- *
- * Instead of relying on a push channel (which WebUntis only offers for *messages*), Untis+
- * snapshots the week's timetable, then re-fetches it periodically and diffs. When a lesson is
- * cancelled, moved, re-roomed or otherwise substituted, we raise an in-app banner and — if the
- * user allowed it — a browser notification. This directly targets the "missed substitution"
- * complaint.
- *
- * Limitation: it runs while the app is open (or when it regains focus). Background delivery
- * would need Push/Periodic Background Sync and is on the roadmap.
- */
+export interface NotificationSettings {
+  enabled: boolean;
+  notifyCancellations: boolean; // Stundenausfälle
+  notifySubstitutions: boolean; // Vertretungen & Raumänderungen
+  notifyExams: boolean;         // Prüfungen & Tests
+  examReminderDays: number[];   // e.g. [7, 5, 3, 1, 0] (0 = heute, 1 = morgen, 3 = in 3 Tagen, etc.)
+  quietHoursEnabled: boolean;
+  quietHoursStart: string;      // "22:00"
+  quietHoursEnd: string;        // "06:30"
+}
+
+export const DEFAULT_NOTIFICATION_SETTINGS: NotificationSettings = {
+  enabled: false,
+  notifyCancellations: true,
+  notifySubstitutions: true,
+  notifyExams: true,
+  examReminderDays: [7, 5, 3, 1, 0],
+  quietHoursEnabled: false,
+  quietHoursStart: '22:00',
+  quietHoursEnd: '06:30',
+};
+
+export const NOTIFICATION_SETTINGS_KEY = 'up.notification_settings';
+export const NOTIFIED_EXAMS_KEY = 'up.notified_exams';
+
+export function loadNotificationSettings(): NotificationSettings {
+  if (typeof localStorage === 'undefined') {
+    return { ...DEFAULT_NOTIFICATION_SETTINGS };
+  }
+  try {
+    const raw = localStorage.getItem(NOTIFICATION_SETTINGS_KEY);
+    if (!raw) {
+      const legacyNotify = localStorage.getItem('up.notify');
+      return {
+        ...DEFAULT_NOTIFICATION_SETTINGS,
+        enabled: legacyNotify === 'on',
+      };
+    }
+    const parsed = JSON.parse(raw);
+    return {
+      ...DEFAULT_NOTIFICATION_SETTINGS,
+      ...parsed,
+      examReminderDays: Array.isArray(parsed.examReminderDays)
+        ? parsed.examReminderDays
+        : DEFAULT_NOTIFICATION_SETTINGS.examReminderDays,
+    };
+  } catch {
+    return { ...DEFAULT_NOTIFICATION_SETTINGS };
+  }
+}
+
+export function saveNotificationSettings(settings: NotificationSettings): void {
+  if (typeof localStorage === 'undefined') return;
+  try {
+    localStorage.setItem(NOTIFICATION_SETTINGS_KEY, JSON.stringify(settings));
+    localStorage.setItem('up.notify', settings.enabled ? 'on' : 'off');
+  } catch {
+    /* ignore storage quota */
+  }
+}
+
+export function isQuietHour(settings: NotificationSettings, date = new Date()): boolean {
+  if (!settings.quietHoursEnabled) return false;
+  if (!settings.quietHoursStart || !settings.quietHoursEnd) return false;
+
+  const [sH, sM] = settings.quietHoursStart.split(':').map(Number);
+  const [eH, eM] = settings.quietHoursEnd.split(':').map(Number);
+  if (isNaN(sH!) || isNaN(sM!) || isNaN(eH!) || isNaN(eM!)) return false;
+
+  const currentMin = date.getHours() * 60 + date.getMinutes();
+  const startMin = sH! * 60 + sM!;
+  const endMin = eH! * 60 + eM!;
+
+  if (startMin <= endMin) {
+    return currentMin >= startMin && currentMin < endMin;
+  }
+  // Overnight range, e.g. 22:00 -> 06:30
+  return currentMin >= startMin || currentMin < endMin;
+}
+
+export function daysBetween(dateA: string, dateB: string): number {
+  const [y1, m1, d1] = dateA.split('-').map(Number);
+  const [y2, m2, d2] = dateB.split('-').map(Number);
+  const utc1 = Date.UTC(y1!, m1! - 1, d1!);
+  const utc2 = Date.UTC(y2!, m2! - 1, d2!);
+  return Math.round((utc1 - utc2) / (1000 * 60 * 60 * 24));
+}
+
+const DE_DAYS = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'];
+
+export function weekdayName(iso: string, lang = 'de'): string {
+  const [y, m, d] = iso.split('-').map(Number);
+  const date = new Date(y!, m! - 1, d!);
+  try {
+    const locale = lang === 'en' ? 'en-GB' : 'de-AT';
+    const s = date.toLocaleDateString(locale, { weekday: 'long' });
+    return s.charAt(0).toUpperCase() + s.slice(1);
+  } catch {
+    return DE_DAYS[date.getDay()] ?? '';
+  }
+}
+
+export function formatExamReminderMessage(
+  exam: Exam,
+  daysBefore: number,
+  lang = 'de',
+): { title: string; body: string } {
+  const fach = exam.subject?.name || exam.subject?.longName || 'Prüfung';
+  const badge = getExamTypeBadge(exam.type);
+  const art = badge.label || exam.type || 'Prüfung';
+  const zeit = minutesToTime(exam.startMin);
+  const wochentag = weekdayName(exam.date, lang);
+  const room = exam.rooms?.map((r) => r.name).join(', ');
+  const roomSuffix = room ? ` (Raum ${room})` : '';
+  const note = exam.text ? ` · ${exam.text}` : '';
+
+  let title = '';
+  let body = '';
+
+  if (daysBefore === 0) {
+    title = `📝 Heute Prüfung: ${fach} (${art}) um ${zeit}`;
+    body = `${art} heute um ${zeit}${roomSuffix}${note}`;
+  } else if (daysBefore === 1) {
+    title = `🔔 Morgen Prüfung: ${fach} (${art}) um ${zeit}`;
+    body = `${art} morgen um ${zeit}${roomSuffix}${note}`;
+  } else if (daysBefore === 3) {
+    title = `⏳ In 3 Tagen Prüfung: ${fach} (${art}) am ${wochentag}`;
+    body = `${art} am ${wochentag} um ${zeit}${roomSuffix}${note}`;
+  } else if (daysBefore === 5) {
+    title = `⏳ In 5 Tagen Prüfung: ${fach} (${art}) am ${wochentag}`;
+    body = `${art} am ${wochentag} um ${zeit}${roomSuffix}${note}`;
+  } else if (daysBefore === 7) {
+    title = `📅 In 1 Woche Prüfung: ${fach} (${art}) am ${wochentag}`;
+    body = `${art} am ${wochentag} um ${zeit}${roomSuffix}${note}`;
+  } else {
+    title = `📝 In ${daysBefore} Tagen Prüfung: ${fach} (${art}) am ${wochentag}`;
+    body = `${art} am ${wochentag} um ${zeit}${roomSuffix}${note}`;
+  }
+
+  return { title, body };
+}
+
+export function getNotifiedExams(): Record<string, number> {
+  if (typeof localStorage === 'undefined') return {};
+  try {
+    const raw = localStorage.getItem(NOTIFIED_EXAMS_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+}
+
+export function saveNotifiedExams(map: Record<string, number>): void {
+  if (typeof localStorage === 'undefined') return;
+  try {
+    localStorage.setItem(NOTIFIED_EXAMS_KEY, JSON.stringify(map));
+  } catch {
+    /* ignore */
+  }
+}
+
+export function clearNotifiedExams(): void {
+  if (typeof localStorage === 'undefined') return;
+  try {
+    localStorage.removeItem(NOTIFIED_EXAMS_KEY);
+  } catch {
+    /* ignore */
+  }
+}
+
+export async function checkAndDispatchExamReminders(
+  exams: Exam[],
+  settings: NotificationSettings = loadNotificationSettings(),
+  referenceDateIso = todayIso(),
+): Promise<string[]> {
+  if (!settings.enabled || !settings.notifyExams) return [];
+  if (!notificationSupported() || Notification.permission !== 'granted') return [];
+  if (isQuietHour(settings)) return [];
+
+  const notified = getNotifiedExams();
+  const dispatchedKeys: string[] = [];
+
+  for (const exam of exams) {
+    const daysDiff = daysBetween(exam.date, referenceDateIso);
+    if (!settings.examReminderDays.includes(daysDiff)) continue;
+
+    const key = `${exam.id}_${exam.date}_${daysDiff}`;
+    const altKey = `exam-${exam.id}-day-${daysDiff}`;
+    if (notified[key] || notified[altKey]) continue;
+
+    const { title, body } = formatExamReminderMessage(exam, daysDiff, i18n.language);
+    await dispatchNotification(title, {
+      body,
+      tag: `untisplus-exam-${exam.id}-${daysDiff}`,
+      icon: '/icons/icon-192.png',
+      badge: '/icons/icon-192.png',
+      url: 'exams',
+    });
+
+    const now = Date.now();
+    notified[key] = now;
+    notified[altKey] = now;
+    dispatchedKeys.push(key);
+  }
+
+  saveNotifiedExams(notified);
+  return dispatchedKeys;
+}
 
 const SNAP_PREFIX = 'up.snap.';
 const snapKey = (target: string | number, weekStart: string) => `${SNAP_PREFIX}${target}:${weekStart}`;
@@ -61,6 +259,84 @@ const KIND_KEY: Record<ChangeKind, string> = {
 
 export function describeChange(c: LessonChange): string {
   return `${minutesToTime(c.startMin)} ${i18n.t(KIND_KEY[c.kind])}`;
+}
+
+export function formatLessonChangeNotification(c: LessonChange): {
+  title: string;
+  body: string;
+  url: string;
+  tag: string;
+} {
+  const subject = c.subject || 'Unterricht';
+  const time = minutesToTime(c.startMin);
+  const reason = c.reason || c.text;
+
+  if (c.kind === 'CANCELLED') {
+    const reasonStr = reason ? ` (${reason})` : '';
+    return {
+      title: `⚠️ Entfall: ${subject} entfällt um ${time}${reasonStr}`,
+      body: `${subject} entfällt um ${time}${reasonStr}`,
+      url: 'subs',
+      tag: `untisplus-cancel-${c.id}`,
+    };
+  }
+
+  if (c.kind === 'ROOM_CHANGE') {
+    const room = c.room || c.text || 'Anderer Raum';
+    return {
+      title: `🏛️ Raumänderung: ${subject} um ${time} in Raum ${room}`,
+      body: `Neuer Raum: ${room} um ${time}`,
+      url: 'subs',
+      tag: `untisplus-room-${c.id}`,
+    };
+  }
+
+  if (c.kind === 'TEACHER_CHANGE') {
+    const teacher = c.teacher || c.text || 'Vertretung';
+    return {
+      title: `🔄 Vertretung: ${subject} um ${time} bei ${teacher}`,
+      body: `Vertretung durch ${teacher} um ${time}`,
+      url: 'subs',
+      tag: `untisplus-teacher-${c.id}`,
+    };
+  }
+
+  const note = c.text ? ` (${c.text})` : '';
+  return {
+    title: `🔄 Vertretung: ${subject} um ${time}${note}`,
+    body: `${describeChange(c)}${note}`,
+    url: 'subs',
+    tag: `untisplus-subst-${c.id}`,
+  };
+}
+
+export function pushNotification(
+  changes: LessonChange[],
+  settings: NotificationSettings = loadNotificationSettings(),
+): void {
+  if (!settings.enabled) return;
+  if (!notificationSupported() || Notification.permission !== 'granted') return;
+  if (isQuietHour(settings)) return;
+
+  const relevantChanges = changes.filter((c) => {
+    if (c.kind === 'CANCELLED') {
+      return settings.notifyCancellations;
+    }
+    return settings.notifySubstitutions;
+  });
+
+  if (relevantChanges.length === 0) return;
+
+  for (const c of relevantChanges.slice(0, 5)) {
+    const { title, body, url, tag } = formatLessonChangeNotification(c);
+    void dispatchNotification(title, {
+      body,
+      tag,
+      icon: '/icons/icon-192.png',
+      badge: '/icons/icon-192.png',
+      url,
+    });
+  }
 }
 
 export function isIosDevice(): boolean {
@@ -217,21 +493,78 @@ export async function sendTestNotification(options?: {
   return res.ok ? { ok: true, method: res.method } : { ok: false, reason: res.error };
 }
 
-function pushNotification(changes: LessonChange[]): void {
-  if (!notificationSupported() || Notification.permission !== 'granted') return;
-  const lines = changes.slice(0, 3).map(describeChange);
-  if (changes.length > 3) lines.push(`+${changes.length - 3} …`);
-  void dispatchNotification(i18n.t('changes.title'), {
-    body: lines.join('\n'),
-    tag: 'untisplus-changes',
+export async function sendTestCancellationNotification(): Promise<{
+  ok: boolean;
+  reason?: string;
+  method?: string;
+}> {
+  const diag = getNotificationDiagnostics();
+  if (!diag.supported && diag.iosWebPushBlocked) {
+    return { ok: false, reason: 'ios_not_standalone' };
+  }
+  if (!diag.supported) {
+    return { ok: false, reason: 'unsupported' };
+  }
+
+  if (Notification.permission !== 'granted') {
+    const granted = await requestNotificationPermission();
+    if (!granted) {
+      return { ok: false, reason: 'denied' };
+    }
+  }
+
+  const title = '⚠️ Entfall: Mathematik entfällt um 09:40 (Krankheit)';
+  const body = 'Mathematik entfällt um 09:40 (Krankheit)';
+
+  const res = await dispatchNotification(title, {
+    body,
+    tag: 'untisplus-test-cancellation',
     icon: '/icons/icon-192.png',
     badge: '/icons/icon-192.png',
+    url: 'subs',
   });
+
+  return res.ok ? { ok: true, method: res.method } : { ok: false, reason: res.error };
+}
+
+export async function sendTestExamReminderNotification(): Promise<{
+  ok: boolean;
+  reason?: string;
+  method?: string;
+}> {
+  const diag = getNotificationDiagnostics();
+  if (!diag.supported && diag.iosWebPushBlocked) {
+    return { ok: false, reason: 'ios_not_standalone' };
+  }
+  if (!diag.supported) {
+    return { ok: false, reason: 'unsupported' };
+  }
+
+  if (Notification.permission !== 'granted') {
+    const granted = await requestNotificationPermission();
+    if (!granted) {
+      return { ok: false, reason: 'denied' };
+    }
+  }
+
+  const title = '📝 Morgen Prüfung: Mathematik (Schularbeit) um 08:00';
+  const body = 'Schularbeit morgen um 08:00 in Raum 204';
+
+  const res = await dispatchNotification(title, {
+    body,
+    tag: 'untisplus-test-exam',
+    icon: '/icons/icon-192.png',
+    badge: '/icons/icon-192.png',
+    url: 'exams',
+  });
+
+  return res.ok ? { ok: true, method: res.method } : { ok: false, reason: res.error };
 }
 
 /**
- * Watch the effective timetable for changes. Active only while `notifyPref === 'on'` and a
- * session exists. Runs on mount, on an interval, and when the tab becomes visible again.
+ * Watch the effective timetable for changes and upcoming exams.
+ * Active while notifications are enabled and a session exists.
+ * Runs on mount, on an interval, and when the tab becomes visible again.
  */
 export function useChangeWatcher(intervalMs = 5 * 60_000): void {
   const { session, notifyPref, setRecentChanges } = useApp();
@@ -239,14 +572,19 @@ export function useChangeWatcher(intervalMs = 5 * 60_000): void {
   const busy = useRef(false);
 
   useEffect(() => {
-    if (!session || notifyPref !== 'on' || !target) return;
+    const initialSettings = loadNotificationSettings();
+    if (!session || (!initialSettings.enabled && notifyPref !== 'on') || !target) return;
     let disposed = false;
 
     const tick = async () => {
       if (busy.current || disposed) return;
       busy.current = true;
       try {
-        const weekStart = mondayOf(todayIso());
+        const settings = loadNotificationSettings();
+        if (!settings.enabled && notifyPref !== 'on') return;
+
+        const today = todayIso();
+        const weekStart = mondayOf(today);
         const weekEnd = addDays(weekStart, 6);
         const { lessons } = await api.timetable(weekStart, weekEnd, {
           id: target.id,
@@ -257,11 +595,33 @@ export function useChangeWatcher(intervalMs = 5 * 60_000): void {
         const prev = readSnap(key);
         writeSnap(key, lessons);
         if (prev) {
-          const changes = diffLessons(prev, lessons);
-          if (changes.length > 0) {
+          const rawChanges = diffLessons(prev, lessons);
+          if (rawChanges.length > 0) {
+            const changes = rawChanges.map((c) => {
+              const l = lessons.find((x) => x.id === c.id) || prev.find((x) => x.id === c.id);
+              return {
+                ...c,
+                subject: l?.subjects[0]?.name,
+                room: l?.rooms[0]?.name,
+                teacher: l?.teachers[0]?.name,
+                reason: c.text ?? l?.substText,
+              };
+            });
             setRecentChanges(changes);
             emitModEvent('changes', changes);
-            pushNotification(changes);
+            pushNotification(changes, settings);
+          }
+        }
+
+        // Exam reminders check for the next 14 days
+        if (settings.notifyExams) {
+          try {
+            const examRes = await api.exams(today, addDays(today, 14));
+            if (!disposed && examRes?.available && examRes?.data) {
+              await checkAndDispatchExamReminders(examRes.data, settings, today);
+            }
+          } catch {
+            /* offline / expired session — retry on the next tick */
           }
         }
       } catch {

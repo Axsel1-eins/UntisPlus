@@ -44,7 +44,7 @@ if command -v xcodebuild >/dev/null 2>&1; then
 else
   echo "ℹ️ Note: macOS with Xcode is required to run native arm64 iOS compilation directly."
   echo "   On Linux/Windows, you can:"
-  echo "   1. Push this repo to GitHub and run the automated GitHub Actions workflow (.github/workflows/ios.yml)."
+  echo "   1. Push this repo to GitHub and run the automated GitHub Actions workflow (.github/workflows/build-mobile.yml)."
   echo "   2. Open $IOS_DIR in Xcode on a Mac (run: 'cd apps/web && npx cap open ios')."
   echo "   3. Sideload the generated unsigned IPA or build via AltStore / Sideloadly / Scarlet / TrollStore."
 fi

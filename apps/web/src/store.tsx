@@ -150,13 +150,34 @@ export function AppProvider({ children }: { children: ReactNode }) {
           retryTimer = setTimeout(() => {
             void checkSession(attempt + 1);
           }, 1500 * (attempt + 1));
-        } else {
-          // Only clear session on definitive auth failure (401/403) or no previous session
-          if (!cached || !isTemporary) {
-            setSession(null);
-          }
-          setSessionReady(true);
+          return;
         }
+
+        // If session expired or invalid, attempt silent auto-reauth using saved credentials
+        const savedLogin = ls.get('up.saved_login');
+        if (savedLogin) {
+          try {
+            const creds = JSON.parse(savedLogin);
+            if (creds && creds.school && (creds.mode === 'anonymous' || creds.user)) {
+              const reauthSession = await api.login(creds);
+              if (!active) return;
+              setSession(reauthSession);
+              setSessionReady(true);
+              return;
+            }
+          } catch (reauthErr) {
+            // If explicit auth rejection (credentials changed/invalid), purge to avoid retry loops
+            if ((reauthErr as any)?.status === 401 || (reauthErr as any)?.status === 403) {
+              if (typeof localStorage !== 'undefined') localStorage.removeItem('up.saved_login');
+            }
+          }
+        }
+
+        // Only clear session on definitive auth failure (401/403) or no previous session
+        if (!cached || !isTemporary) {
+          setSession(null);
+        }
+        setSessionReady(true);
       }
     };
 
@@ -215,6 +236,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     try {
       await api.logout();
     } finally {
+      if (typeof localStorage !== 'undefined') {
+        localStorage.removeItem('up.saved_login');
+        localStorage.removeItem('up.token');
+      }
       setSession(null);
       setMaster(null);
     }

@@ -287,6 +287,7 @@ const LOCALE_MAP: Record<string, string> = {
   fr: 'fr-FR',
   es: 'es-ES',
   it: 'it-IT',
+  ro: 'ro-RO',
   tr: 'tr-TR',
   bs: 'bs-BA',
   uk: 'uk-UA',

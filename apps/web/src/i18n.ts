@@ -3,13 +3,14 @@ import { initReactI18next } from 'react-i18next';
 import { es } from './locales/es.js';
 import { fr } from './locales/fr.js';
 import { it } from './locales/it.js';
+import { ro } from './locales/ro.js';
 import { tr } from './locales/tr.js';
 import { bs } from './locales/bs.js';
 import { uk } from './locales/uk.js';
 import { ru } from './locales/ru.js';
 import { ar } from './locales/ar.js';
 
-export type SupportedLanguage = 'de' | 'en' | 'es' | 'fr' | 'it' | 'tr' | 'bs' | 'uk' | 'ru' | 'ar';
+export type SupportedLanguage = 'de' | 'en' | 'es' | 'fr' | 'it' | 'ro' | 'tr' | 'bs' | 'uk' | 'ru' | 'ar';
 
 /**
  * All UI strings. German is the default (WebUntis is an Austrian/German product), English is
@@ -44,6 +45,7 @@ export const resources = {
         secretPlaceholder: 'z. B. JBSWY3DPEHPK3PXP',
         signIn: 'Anmelden',
         back: 'Zurück',
+        rememberLogin: 'Angemeldet bleiben (Automatisch einloggen)',
         disclaimer:
           'Untis⁺ ist ein unabhängiger Client und steht in keiner Verbindung zu Untis GmbH.',
         fixture: 'Demo-Schule (ohne Daten)',
@@ -422,11 +424,38 @@ export const resources = {
         notifyStatus: 'Status: {{status}}',
         notifyTestTitle: 'Untis⁺ Test',
         notifyTestBody: '🎉 Benachrichtigungen funktionieren einwandfrei auf diesem Gerät!',
+        notifyCancellations: 'Unterrichtsentfälle',
+        notifyCancellationsHint: 'Sofort warnen, wenn eine Stunde entfällt',
+        notifySubstitutions: 'Vertretungen & Raumänderungen',
+        notifySubstitutionsHint: 'Über Raum-, Lehrkraft- und Stundenverschiebungen informieren',
+        notifyExams: 'Prüfungen & Tests',
+        notifyExamsHint: 'Erinnerungen an anstehende Schularbeiten, Tests & Abgaben',
+        notifyExamIntervalsTitle: 'Erinnerungs-Zeitpunkte',
+        notifyExam7Days: '7 Tage vorher (1 Woche)',
+        notifyExam5Days: '5 Tage vorher',
+        notifyExam3Days: '3 Tage vorher',
+        notifyExam1Day: '1 Tag vorher (Morgen)',
+        notifyExam0Days: 'Am Prüfungstag (Heute)',
+        notifyQuietHours: 'Ruhezeiten (Nicht stören)',
+        notifyQuietHoursHint: 'Keine Benachrichtigungen während der Schlafenszeit senden',
+        notifyQuietHoursFrom: 'Von',
+        notifyQuietHoursTo: 'Bis',
+        notifyTestSectionTitle: 'Benachrichtigung testen',
+        notifyTestInstant: 'Sofort-Test',
+        notifyTestCancellation: 'Test-Entfall',
+        notifyTestExam: 'Test-Prüfung',
         data: 'Daten',
         refresh: 'Aktualisieren',
         logout: 'Abmelden',
         install: 'App installieren',
         installed: 'App ist installiert',
+        serverConnection: 'Server & API-Verbindung',
+        serverConnectionHint: 'Für Smartphone-Apps (APK / IPA) oder eigene Server-Instanzen kann hier die Backend-URL angepasst werden.',
+        save: 'Speichern',
+        reset: 'Zurücksetzen',
+        activeApiUrl: 'Aktiver API-Endpunkt',
+        apiUrlSaved: 'API-URL gespeichert. App wird neu geladen...',
+        apiUrlReset: 'API-URL zurückgesetzt.',
         about: 'Über',
         version: 'Version',
         disclaimer:
@@ -717,6 +746,7 @@ export const resources = {
         secretPlaceholder: 'e.g. JBSWY3DPEHPK3PXP',
         signIn: 'Sign in',
         back: 'Back',
+        rememberLogin: 'Stay signed in (Auto login)',
         disclaimer: 'Untis⁺ is an independent client and is not affiliated with Untis GmbH.',
         fixture: 'Demo school (no data)',
       },
@@ -1093,11 +1123,38 @@ export const resources = {
         notifyStatus: 'Status: {{status}}',
         notifyTestTitle: 'Untis⁺ Test',
         notifyTestBody: '🎉 Notifications are working properly on this device!',
+        notifyCancellations: 'Lesson cancellations',
+        notifyCancellationsHint: 'Get alerted immediately when a lesson is cancelled',
+        notifySubstitutions: 'Substitutions & room changes',
+        notifySubstitutionsHint: 'Stay updated about changes to rooms, teachers, or periods',
+        notifyExams: 'Exams & tests',
+        notifyExamsHint: 'Reminders for upcoming exams, tests, and assignment deadlines',
+        notifyExamIntervalsTitle: 'Reminder intervals',
+        notifyExam7Days: '7 days before (1 week)',
+        notifyExam5Days: '5 days before',
+        notifyExam3Days: '3 days before',
+        notifyExam1Day: '1 day before (Tomorrow)',
+        notifyExam0Days: 'On exam day (Today)',
+        notifyQuietHours: 'Quiet hours (Do not disturb)',
+        notifyQuietHoursHint: 'Do not send notifications during sleeping hours',
+        notifyQuietHoursFrom: 'From',
+        notifyQuietHoursTo: 'To',
+        notifyTestSectionTitle: 'Test notification',
+        notifyTestInstant: 'Instant test',
+        notifyTestCancellation: 'Test cancellation',
+        notifyTestExam: 'Test exam',
         data: 'Data',
         refresh: 'Refresh',
         logout: 'Sign out',
         install: 'Install app',
         installed: 'App is installed',
+        serverConnection: 'Server & API Connection',
+        serverConnectionHint: 'For native mobile apps (APK / IPA) or self-hosted instances, configure your backend API URL here.',
+        save: 'Save',
+        reset: 'Reset',
+        activeApiUrl: 'Active API endpoint',
+        apiUrlSaved: 'API URL saved. Reloading...',
+        apiUrlReset: 'API URL reset.',
         about: 'About',
         version: 'Version',
         disclaimer:
@@ -1359,6 +1416,9 @@ export const resources = {
         generic: 'Unexpected error.',
       },
     },
+  },
+  ro: {
+    translation: ro,
   },
   es,
   fr,

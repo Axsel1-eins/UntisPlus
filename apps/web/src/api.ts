@@ -30,6 +30,40 @@ export function clearApiCache(): void {
   cache.clear();
 }
 
+const TOKEN_KEY = 'up.token';
+const API_URL_KEY = 'up.api_url';
+
+export function getStoredToken(): string | null {
+  if (typeof localStorage === 'undefined') return null;
+  return localStorage.getItem(TOKEN_KEY);
+}
+
+export function setStoredToken(token: string | null): void {
+  if (typeof localStorage === 'undefined') return;
+  if (token) localStorage.setItem(TOKEN_KEY, token);
+  else localStorage.removeItem(TOKEN_KEY);
+}
+
+export function getApiBaseUrl(): string {
+  if (typeof localStorage !== 'undefined') {
+    const custom = localStorage.getItem(API_URL_KEY);
+    if (custom && custom.trim()) {
+      return custom.trim().replace(/\/+$/, '');
+    }
+  }
+  const envUrl = (import.meta as any).env?.VITE_API_URL;
+  if (envUrl && typeof envUrl === 'string' && envUrl.trim()) {
+    return envUrl.trim().replace(/\/+$/, '');
+  }
+  return '';
+}
+
+export function setCustomApiUrl(url: string | null): void {
+  if (typeof localStorage === 'undefined') return;
+  if (url && url.trim()) localStorage.setItem(API_URL_KEY, url.trim().replace(/\/+$/, ''));
+  else localStorage.removeItem(API_URL_KEY);
+}
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const isGet = !init || init.method === undefined || init.method === 'GET';
   const cacheable = isGet && path !== '/session';
@@ -39,12 +73,22 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     if (hit && Date.now() - hit.at < CACHE_TTL_MS) return hit.data as T;
   }
 
+  const token = getStoredToken();
+  const baseUrl = getApiBaseUrl();
+  const url = `${baseUrl}/api${path}`;
+
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...(token ? { 'X-Session-Token': token, Authorization: `Bearer ${token}` } : {}),
+    ...(init?.headers as Record<string, string> | undefined),
+  };
+
   let res: Response;
   try {
-    res = await fetch(`/api${path}`, {
+    res = await fetch(url, {
       credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
       ...init,
+      headers,
     });
   } catch (err) {
     throw new ApiError('network', err instanceof Error ? err.message : 'network', 0);
@@ -99,16 +143,30 @@ export const api = {
   searchSchools: (q: string) =>
     request<{ schools: School[] }>(`/schools?q=${encodeURIComponent(q)}`).then((r) => r.schools),
 
-  session: () => request<SessionSummary>('/session'),
-
-  login: (input: LoginInput) => {
-    clearApiCache();
-    return request<SessionSummary>('/session', { method: 'POST', body: JSON.stringify(input) });
+  session: async () => {
+    const summary = await request<SessionSummary>('/session');
+    if (summary.token) {
+      setStoredToken(summary.token);
+    }
+    return summary;
   },
 
-  logout: () => {
+  login: async (input: LoginInput) => {
     clearApiCache();
-    return request<{ ok: boolean }>('/session', { method: 'DELETE' });
+    const summary = await request<SessionSummary>('/session', { method: 'POST', body: JSON.stringify(input) });
+    if (summary.token) {
+      setStoredToken(summary.token);
+    }
+    return summary;
+  },
+
+  logout: async () => {
+    clearApiCache();
+    try {
+      return await request<{ ok: boolean }>('/session', { method: 'DELETE' });
+    } finally {
+      setStoredToken(null);
+    }
   },
 
   master: () => request<MasterData>('/master'),

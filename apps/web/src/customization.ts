@@ -93,6 +93,35 @@ export interface CustomizationState {
   customCss: string;
   customFont: 'default' | 'monospace' | 'inter' | 'serif';
   cardRadius: number;
+
+  // Today View Customization
+  todayGreetingMode: 'standard' | 'time-based' | 'custom';
+  todayCustomGreeting: string;
+  todayShowCountdown: boolean;
+  todayQuickActions: boolean;
+  todayShowFreePeriods: boolean;
+
+  // Timetable View Customization
+  timetableDefaultView: 'week' | 'day';
+  firstDayOfWeek: 'monday' | 'sunday';
+  timetableCellFontSize: 'small' | 'medium' | 'large';
+
+  // Substitutions View Customization
+  subsFilterMode: 'all' | 'my-subjects';
+  subsGrouping: 'date' | 'kind';
+  subsViewMode: 'cards' | 'table';
+
+  // Exams View Customization
+  examGradeScale: 'austrian' | 'german' | 'swiss' | 'points';
+  examGradeTarget: number;
+  examShowPast: boolean;
+
+  // Rooms View Customization
+  roomsDefaultCategory: 'all' | 'computer' | 'gym' | 'science' | 'special';
+  roomsOnlyFreeDefault: boolean;
+
+  // Global Animations & Motion
+  animationsLevel: 'full' | 'subtle' | 'none';
 }
 
 const STORAGE_KEY = 'up.customization';
@@ -260,6 +289,35 @@ export const DEFAULT_CUSTOMIZATION: CustomizationState = {
   customCss: '',
   customFont: 'default',
   cardRadius: 9,
+
+  // Today View defaults
+  todayGreetingMode: 'time-based',
+  todayCustomGreeting: '',
+  todayShowCountdown: true,
+  todayQuickActions: true,
+  todayShowFreePeriods: true,
+
+  // Timetable View defaults
+  timetableDefaultView: 'week',
+  firstDayOfWeek: 'monday',
+  timetableCellFontSize: 'medium',
+
+  // Substitutions View defaults
+  subsFilterMode: 'all',
+  subsGrouping: 'date',
+  subsViewMode: 'cards',
+
+  // Exams View defaults
+  examGradeScale: 'austrian',
+  examGradeTarget: 1,
+  examShowPast: false,
+
+  // Rooms View defaults
+  roomsDefaultCategory: 'all',
+  roomsOnlyFreeDefault: false,
+
+  // Global Animations & Motion defaults
+  animationsLevel: 'full',
 };
 
 let currentState: CustomizationState = loadState();

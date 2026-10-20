@@ -5,9 +5,14 @@ import { useInstallPrompt } from '../hooks.js';
 import { navigate, type Route } from '../router.js';
 import {
   getNotificationDiagnostics,
+  loadNotificationSettings,
   notificationPermission,
   requestNotificationPermission,
+  saveNotificationSettings,
+  sendTestCancellationNotification,
+  sendTestExamReminderNotification,
   sendTestNotification,
+  type NotificationSettings,
 } from '../notify.js';
 import { getNavItems, getSettingsSections, listMods, useModsVersion } from '../mods.js';
 import { getTheme, useThemes } from '../themes.js';
@@ -16,13 +21,14 @@ import { ModHost } from '../components/ModHost.js';
 import { Icon, Segmented, Spinner } from '../components/primitives.js';
 import { CalendarExportModal } from '../components/CalendarExportModal.js';
 import { InstallModal } from '../components/InstallModal.js';
-import { api } from '../api.js';
+import { api, getApiBaseUrl, setCustomApiUrl } from '../api.js';
 import { toast } from '../toast.js';
 import type { SupportedLanguage } from '../i18n.js';
 
 const LANGUAGES: { code: SupportedLanguage; label: string; flag: string }[] = [
   { code: 'de', label: 'Deutsch', flag: '🇦🇹' },
   { code: 'en', label: 'English', flag: '🇬🇧' },
+  { code: 'ro', label: 'Română', flag: '🇷🇴' },
   { code: 'es', label: 'Español', flag: '🇪🇸' },
   { code: 'fr', label: 'Français', flag: '🇫🇷' },
   { code: 'it', label: 'Italiano', flag: '🇮🇹' },
@@ -58,6 +64,7 @@ export function SettingsView() {
   const { canInstall, promptInstall, installed } = useInstallPrompt();
   const [refreshing, setRefreshing] = useState(false);
   const [permission, setPermission] = useState(notificationPermission());
+  const [notifySettings, setNotifySettings] = useState<NotificationSettings>(() => loadNotificationSettings());
   const [testingNotify, setTestingNotify] = useState(false);
   const [countdown, setCountdown] = useState<number | null>(null);
   const [testResult, setTestResult] = useState<{ ok: boolean; message: string } | null>(null);
@@ -66,6 +73,22 @@ export function SettingsView() {
   const [loadingCal, setLoadingCal] = useState(false);
   const [calModalOpen, setCalModalOpen] = useState(false);
   const [installModalOpen, setInstallModalOpen] = useState(false);
+  const [apiUrlInput, setApiUrlInput] = useState(() =>
+    typeof localStorage !== 'undefined' ? localStorage.getItem('up.api_url') || '' : '',
+  );
+
+  function handleSaveApiUrl() {
+    setCustomApiUrl(apiUrlInput);
+    toast(t('settings.apiUrlSaved'), 'success');
+    setTimeout(() => window.location.reload(), 600);
+  }
+
+  function handleResetApiUrl() {
+    setCustomApiUrl(null);
+    setApiUrlInput('');
+    toast(t('settings.apiUrlReset'), 'info');
+    setTimeout(() => window.location.reload(), 600);
+  }
 
   useEffect(() => {
     let active = true;
@@ -104,11 +127,72 @@ export function SettingsView() {
   const morePages = getNavItems().filter((n) => n.placement === 'more');
   const modSettings = getSettingsSections();
 
+  function updateNotifySettings(patch: Partial<NotificationSettings>) {
+    setNotifySettings((prev) => {
+      const updated = { ...prev, ...patch };
+      saveNotificationSettings(updated);
+      if (patch.enabled !== undefined) {
+        setNotifyPref(patch.enabled ? 'on' : 'off');
+      }
+      return updated;
+    });
+  }
+
+  function toggleExamReminderDay(day: number) {
+    const current = notifySettings.examReminderDays ?? [];
+    const next = current.includes(day)
+      ? current.filter((d) => d !== day)
+      : [...current, day].sort((a, b) => b - a);
+    updateNotifySettings({ examReminderDays: next });
+  }
+
   async function onChangeNotify(v: NotifyPref) {
+    const isEnabled = v === 'on';
     setNotifyPref(v);
-    if (v === 'on') {
+    updateNotifySettings({ enabled: isEnabled });
+    if (isEnabled) {
       await requestNotificationPermission();
       setPermission(notificationPermission());
+    }
+  }
+
+  async function runCustomTest(fn: () => Promise<{ ok: boolean; reason?: string }>) {
+    setTestResult(null);
+    setTestingNotify(true);
+    try {
+      const res = await fn();
+      setPermission(notificationPermission());
+      if (res.ok) {
+        setTestResult({
+          ok: true,
+          message: t('settings.notifyTestSuccess'),
+        });
+        toast(t('settings.notifyTestSuccess'), 'success');
+      } else if (res.reason === 'ios_not_standalone') {
+        setTestResult({
+          ok: false,
+          message: t('settings.notifyIosHint'),
+        });
+        toast(t('settings.notifyIosHint'), 'info');
+      } else if (res.reason === 'denied') {
+        setTestResult({
+          ok: false,
+          message: t('settings.notifyBlocked'),
+        });
+        toast(t('settings.notifyBlocked'), 'error');
+      } else {
+        setTestResult({
+          ok: false,
+          message: t('settings.notifyPermUnsupported'),
+        });
+      }
+    } catch (e) {
+      setTestResult({
+        ok: false,
+        message: String(e),
+      });
+    } finally {
+      setTestingNotify(false);
     }
   }
 
@@ -376,7 +460,7 @@ export function SettingsView() {
 
       <div className="section">
         <h2>{t('settings.notifications')}</h2>
-        <div className="card pad col" style={{ gap: 12 }}>
+        <div className="card pad col" style={{ gap: 14 }}>
           <div className="row" style={{ gap: 10, alignItems: 'center' }}>
             <Icon name="bell" size={20} />
             <div className="small muted" style={{ flex: 1 }}>
@@ -468,33 +552,191 @@ export function SettingsView() {
             </div>
           )}
 
-          <div className="row wrap" style={{ gap: 8, marginTop: 4 }}>
-            <button
-              type="button"
-              className="btn sm primary"
-              disabled={testingNotify}
-              onClick={() => void runTest(0)}
-              style={{ gap: 6 }}
-            >
-              <Icon name="bell" size={15} />
-              <span>{t('settings.notifyTestButton')}</span>
-            </button>
+          {(notifyPref === 'on' || notifySettings.enabled) && (
+            <>
+              {/* Category toggles */}
+              <div className="col" style={{ gap: 10, borderTop: '1px solid var(--border)', paddingTop: 12 }}>
+                <span style={{ fontSize: 13, fontWeight: 700, letterSpacing: '0.02em', textTransform: 'uppercase', color: 'var(--muted)' }}>
+                  Kategorien & Benachrichtigungstypen
+                </span>
 
-            <button
-              type="button"
-              className="btn sm"
-              disabled={testingNotify}
-              onClick={() => void runTest(5)}
-              style={{ gap: 6 }}
-              title="Gibt dir 5 Sekunden Zeit, das Display zu sperren oder die App zu minimieren"
-            >
-              <Icon name="clock" size={15} />
-              <span>
-                {countdown !== null
-                  ? t('settings.notifyTestingIn', { seconds: countdown })
-                  : t('settings.notifyTestDelayed')}
-              </span>
-            </button>
+                <label className="row" style={{ gap: 10, alignItems: 'center', cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    checked={notifySettings.notifyCancellations}
+                    onChange={(e) => updateNotifySettings({ notifyCancellations: e.target.checked })}
+                  />
+                  <div className="col" style={{ gap: 2 }}>
+                    <span style={{ fontWeight: 600, fontSize: 14 }}>⚠️ {t('settings.notifyCancellations')}</span>
+                    <span className="tiny muted">{t('settings.notifyCancellationsHint')}</span>
+                  </div>
+                </label>
+
+                <label className="row" style={{ gap: 10, alignItems: 'center', cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    checked={notifySettings.notifySubstitutions}
+                    onChange={(e) => updateNotifySettings({ notifySubstitutions: e.target.checked })}
+                  />
+                  <div className="col" style={{ gap: 2 }}>
+                    <span style={{ fontWeight: 600, fontSize: 14 }}>🔄 {t('settings.notifySubstitutions')}</span>
+                    <span className="tiny muted">{t('settings.notifySubstitutionsHint')}</span>
+                  </div>
+                </label>
+
+                <label className="row" style={{ gap: 10, alignItems: 'center', cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    checked={notifySettings.notifyExams}
+                    onChange={(e) => updateNotifySettings({ notifyExams: e.target.checked })}
+                  />
+                  <div className="col" style={{ gap: 2 }}>
+                    <span style={{ fontWeight: 600, fontSize: 14 }}>📝 {t('settings.notifyExams')}</span>
+                    <span className="tiny muted">{t('settings.notifyExamsHint')}</span>
+                  </div>
+                </label>
+              </div>
+
+              {/* Exam intervals */}
+              {notifySettings.notifyExams && (
+                <div
+                  className="col"
+                  style={{
+                    gap: 8,
+                    background: 'var(--surface-sunken, rgba(0,0,0,0.03))',
+                    padding: '10px 12px',
+                    borderRadius: 10,
+                    border: '1px solid var(--border)',
+                  }}
+                >
+                  <span style={{ fontSize: 13, fontWeight: 600 }}>
+                    📅 {t('settings.notifyExamIntervalsTitle')}
+                  </span>
+                  <div className="row wrap" style={{ gap: 6 }}>
+                    {[
+                      { days: 7, label: t('settings.notifyExam7Days') },
+                      { days: 5, label: t('settings.notifyExam5Days') },
+                      { days: 3, label: t('settings.notifyExam3Days') },
+                      { days: 1, label: t('settings.notifyExam1Day') },
+                      { days: 0, label: t('settings.notifyExam0Days') },
+                    ].map((item) => {
+                      const active = (notifySettings.examReminderDays ?? []).includes(item.days);
+                      return (
+                        <button
+                          key={item.days}
+                          type="button"
+                          className={`btn sm ${active ? 'primary' : 'ghost'}`}
+                          style={{
+                            fontSize: 12,
+                            padding: '4px 10px',
+                            borderRadius: 16,
+                            fontWeight: active ? 600 : 400,
+                          }}
+                          onClick={() => toggleExamReminderDay(item.days)}
+                        >
+                          {active ? '✓ ' : ''}{item.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Quiet hours */}
+              <div className="col" style={{ gap: 8, borderTop: '1px solid var(--border)', paddingTop: 12 }}>
+                <label className="row" style={{ gap: 10, alignItems: 'center', cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    checked={notifySettings.quietHoursEnabled}
+                    onChange={(e) => updateNotifySettings({ quietHoursEnabled: e.target.checked })}
+                  />
+                  <div className="col" style={{ gap: 2 }}>
+                    <span style={{ fontWeight: 600, fontSize: 14 }}>🌙 {t('settings.notifyQuietHours')}</span>
+                    <span className="tiny muted">{t('settings.notifyQuietHoursHint')}</span>
+                  </div>
+                </label>
+
+                {notifySettings.quietHoursEnabled && (
+                  <div className="row" style={{ gap: 12, alignItems: 'center', paddingLeft: 24 }}>
+                    <div className="row" style={{ gap: 6, alignItems: 'center' }}>
+                      <span className="small muted">{t('settings.notifyQuietHoursFrom')}:</span>
+                      <input
+                        type="time"
+                        className="input sm"
+                        style={{ width: 100 }}
+                        value={notifySettings.quietHoursStart || '22:00'}
+                        onChange={(e) => updateNotifySettings({ quietHoursStart: e.target.value })}
+                      />
+                    </div>
+                    <div className="row" style={{ gap: 6, alignItems: 'center' }}>
+                      <span className="small muted">{t('settings.notifyQuietHoursTo')}:</span>
+                      <input
+                        type="time"
+                        className="input sm"
+                        style={{ width: 100 }}
+                        value={notifySettings.quietHoursEnd || '06:30'}
+                        onChange={(e) => updateNotifySettings({ quietHoursEnd: e.target.value })}
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+
+          {/* Test buttons */}
+          <div className="col" style={{ gap: 8, borderTop: '1px solid var(--border)', paddingTop: 12 }}>
+            <span style={{ fontSize: 13, fontWeight: 700, letterSpacing: '0.02em', textTransform: 'uppercase', color: 'var(--muted)' }}>
+              {t('settings.notifyTestSectionTitle')}
+            </span>
+            <div className="row wrap" style={{ gap: 8 }}>
+              <button
+                type="button"
+                className="btn sm primary"
+                disabled={testingNotify}
+                onClick={() => void runTest(0)}
+                style={{ gap: 6 }}
+              >
+                <Icon name="bell" size={15} />
+                <span>{t('settings.notifyTestInstant')}</span>
+              </button>
+
+              <button
+                type="button"
+                className="btn sm"
+                disabled={testingNotify}
+                onClick={() => void runTest(5)}
+                style={{ gap: 6 }}
+                title="Gibt dir 5 Sekunden Zeit, das Display zu sperren oder die App zu minimieren"
+              >
+                <Icon name="clock" size={15} />
+                <span>
+                  {countdown !== null
+                    ? t('settings.notifyTestingIn', { seconds: countdown })
+                    : t('settings.notifyTestDelayed')}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                className="btn sm"
+                disabled={testingNotify}
+                onClick={() => void runCustomTest(sendTestCancellationNotification)}
+                style={{ gap: 6 }}
+              >
+                <span>⚠️ {t('settings.notifyTestCancellation')}</span>
+              </button>
+
+              <button
+                type="button"
+                className="btn sm"
+                disabled={testingNotify}
+                onClick={() => void runCustomTest(sendTestExamReminderNotification)}
+                style={{ gap: 6 }}
+              >
+                <span>📝 {t('settings.notifyTestExam')}</span>
+              </button>
+            </div>
           </div>
 
           {testResult && (
@@ -630,6 +872,43 @@ export function SettingsView() {
               <Icon name="download" size={15} />
               <span>{t('install.openHubBtn')}</span>
             </button>
+          </div>
+        </div>
+      </div>
+
+      <div className="section">
+        <h2>🌐 {t('settings.serverConnection')}</h2>
+        <div className="card pad col" style={{ gap: 12 }}>
+          <div className="small muted">
+            {t('settings.serverConnectionHint')}
+          </div>
+          <div className="row" style={{ gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+            <input
+              className="input small"
+              placeholder="https://mein-untisplus.example.com (Standard: Integriert)"
+              value={apiUrlInput}
+              onChange={(e) => setApiUrlInput(e.target.value)}
+              style={{ flex: 1, minWidth: 200 }}
+            />
+            <button
+              type="button"
+              className="btn sm primary"
+              onClick={handleSaveApiUrl}
+            >
+              {t('settings.save')}
+            </button>
+            {apiUrlInput && (
+              <button
+                type="button"
+                className="btn sm ghost"
+                onClick={handleResetApiUrl}
+              >
+                {t('settings.reset')}
+              </button>
+            )}
+          </div>
+          <div className="tiny muted">
+            {t('settings.activeApiUrl')}: <code>{getApiBaseUrl() || '(Standard / Integrierter Origin)'}</code>
           </div>
         </div>
       </div>

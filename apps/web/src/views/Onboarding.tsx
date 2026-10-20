@@ -26,6 +26,31 @@ export function Onboarding() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fixtures, setFixtures] = useState(false);
+  const [rememberLogin, setRememberLogin] = useState(true);
+
+  // Restore saved login credentials if present
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem('up.saved_login');
+      if (raw) {
+        const saved = JSON.parse(raw);
+        if (saved.server && saved.school) {
+          setSchool({
+            server: saved.server,
+            loginName: saved.school,
+            displayName: saved.displayName || saved.school,
+          });
+          if (saved.mode) setMode(saved.mode);
+          if (saved.user) setUser(saved.user);
+          if (saved.password) setPassword(saved.password);
+          if (saved.secret) setSecret(saved.secret);
+          setStep('auth');
+        }
+      }
+    } catch {
+      // Ignore corrupted cached credentials
+    }
+  }, []);
 
   useEffect(() => {
     api
@@ -79,6 +104,21 @@ export function Onboarding() {
     }
     try {
       const summary = await api.login(input);
+      if (rememberLogin) {
+        if (typeof localStorage !== 'undefined') {
+          localStorage.setItem(
+            'up.saved_login',
+            JSON.stringify({
+              ...input,
+              displayName: school.displayName,
+            })
+          );
+        }
+      } else {
+        if (typeof localStorage !== 'undefined') {
+          localStorage.removeItem('up.saved_login');
+        }
+      }
       setSession(summary);
     } catch (err) {
       if (err instanceof ApiError && err.code === 'auth_failed') setError(t('error.auth'));
@@ -277,6 +317,25 @@ export function Onboarding() {
                 )}
               </div>
             )}
+
+            <label
+              className="row"
+              style={{
+                gap: 8,
+                alignItems: 'center',
+                marginTop: 14,
+                cursor: 'pointer',
+                userSelect: 'none',
+              }}
+            >
+              <input
+                type="checkbox"
+                checked={rememberLogin}
+                onChange={(e) => setRememberLogin(e.target.checked)}
+                style={{ width: 18, height: 18, accentColor: 'var(--brand)' }}
+              />
+              <span className="small">{t('onboarding.rememberLogin')}</span>
+            </label>
 
             <div className="row" style={{ marginTop: 18 }}>
               <button className="btn ghost" onClick={() => setStep('search')} disabled={busy}>

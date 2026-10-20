@@ -75,6 +75,26 @@ describe('API (fixtures mode)', () => {
     expect(loggedIn.json()).toMatchObject({ mode: 'anonymous', readOnly: true });
   });
 
+  it('authenticates session via Authorization: Bearer token header', async () => {
+    const res = await app.inject({
+      method: 'GET',
+      url: '/api/session',
+      headers: { authorization: 'Bearer fixture' },
+    });
+    expect(res.statusCode).toBe(200);
+    expect(res.json()).toMatchObject({ mode: 'anonymous', readOnly: true, token: 'fixture' });
+  });
+
+  it('authenticates session via X-Session-Token header', async () => {
+    const res = await app.inject({
+      method: 'GET',
+      url: '/api/session',
+      headers: { 'x-session-token': 'fixture' },
+    });
+    expect(res.statusCode).toBe(200);
+    expect(res.json()).toMatchObject({ mode: 'anonymous', readOnly: true, token: 'fixture' });
+  });
+
   it('returns master data', async () => {
     const res = await app.inject({ method: 'GET', url: '/api/master' });
     expect(res.statusCode).toBe(200);
