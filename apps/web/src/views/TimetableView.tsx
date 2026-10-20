@@ -378,14 +378,14 @@ export function TimetableView() {
   return (
     <div>
       {/* Page Title & Controls Bar */}
-      <div className="row wrap" style={{ gap: 10, marginBottom: 12, alignItems: 'center' }}>
+      <div className="row wrap page-header-row" style={{ gap: 10, marginBottom: 12, alignItems: 'center' }}>
         <h1 className="page-title">{t('timetable.title')}</h1>
         <div className="spacer" />
 
         {/* Prominent Teacher & Class Explorer Button */}
         <button
           type="button"
-          className="btn sm primary"
+          className="btn sm primary desktop-only"
           onClick={() => setTargetExplorerOpen(true)}
           style={{ gap: 6 }}
           title={t('timetable.targetExplorer')}
@@ -403,7 +403,7 @@ export function TimetableView() {
           title={t('calendar.exportButton')}
         >
           <Icon name="calendar" size={15} />
-          <span>{t('calendar.exportButton')}</span>
+          <span className="desktop-only-inline">{t('calendar.exportButton')}</span>
         </button>
 
         <TargetPicker onChange={setTarget} />
@@ -453,12 +453,12 @@ export function TimetableView() {
 
       {/* Calendar Week Banner & Navigator */}
       <div className="kw-banner">
-        <div className="row wrap" style={{ gap: 10, alignItems: 'center' }}>
+        <div className="row wrap kw-top-row" style={{ gap: 10, alignItems: 'center' }}>
           <div className="kw-badge">
             <span>{formatCalendarWeek(anchor, i18n.language)}</span>
             {isCurrentWeek && <span className="kw-pill">{t('timetable.currentWeek')}</span>}
           </div>
-          <div className="small muted" style={{ fontWeight: 600 }}>
+          <div className="small muted kw-range" style={{ fontWeight: 600 }}>
             {formatDay(days[0]!, i18n.language)} – {formatDay(days[days.length - 1]!, i18n.language)}
             {target?.label ? ` · ${target.label}` : ''}
           </div>
@@ -466,7 +466,7 @@ export function TimetableView() {
           <div className="spacer" />
 
           {/* Week Navigation Controls */}
-          <div className="row" style={{ gap: 6, alignItems: 'center' }}>
+          <div className="row kw-nav-controls" style={{ gap: 6, alignItems: 'center' }}>
             <button
               className="btn ghost icon"
               aria-label={t('timetable.prevWeek')}
@@ -510,7 +510,7 @@ export function TimetableView() {
         </div>
 
         {/* View Mode & Quick Layout Toggles */}
-        <div className="row wrap" style={{ gap: 10, alignItems: 'center', paddingTop: 4 }}>
+        <div className="row wrap kw-bottom-row" style={{ gap: 10, alignItems: 'center', paddingTop: 4 }}>
           <Segmented
             label={t('timetable.viewAs')}
             value={mode}

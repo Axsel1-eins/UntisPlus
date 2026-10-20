@@ -230,15 +230,15 @@ export function TodayView() {
       )}
 
       {/* Day strip */}
-      <div className="row" style={{ gap: 6, marginBottom: 12, justifyContent: 'space-between' }}>
+      <div className="day-strip-container">
         <button
-          className="btn ghost icon"
+          className="btn ghost icon day-strip-nav"
           aria-label={t('timetable.prevWeek')}
           onClick={() => handleWeekChange(-7)}
         >
           <Icon name="chevronLeft" size={18} />
         </button>
-        <div className="row" style={{ gap: 6, flex: 1, justifyContent: 'center' }}>
+        <div className="day-strip-grid">
           {days.map((day) => {
             const active = day === selectedDay;
             const isToday = day === today;
@@ -246,30 +246,22 @@ export function TodayView() {
             return (
               <button
                 key={day}
-                className="btn sm"
+                className={`btn sm day-strip-pill ${active ? 'active' : ''}`}
                 type="button"
                 onClick={() => setSelectedDay(day)}
                 style={{
-                  flexDirection: 'column',
-                  flex: '1 1 0',
-                  minWidth: 0,
-                  maxWidth: 68,
-                  minHeight: 54,
-                  padding: '4px 2px',
-                  gap: 0,
                   background: active ? 'var(--accent)' : 'var(--surface)',
                   borderColor: active ? 'var(--accent)' : 'var(--border)',
                   color: active ? 'var(--accent-ink)' : 'var(--text)',
-                  position: 'relative',
                 }}
               >
-                <span className="tiny" style={{ opacity: 0.8 }}>
+                <span className="tiny day-dow" style={{ opacity: 0.8 }}>
                   {dowShort(day, i18n.language)}
                 </span>
-                <span style={{ fontWeight: 800, fontSize: 17 }}>
+                <span className="day-num" style={{ fontWeight: 800, fontSize: 17 }}>
                   {Number(day.slice(-2))}
                 </span>
-                <div className="row" style={{ gap: 3, alignItems: 'center', height: 10 }}>
+                <div className="row day-dots" style={{ gap: 3, alignItems: 'center', height: 10 }}>
                   {isToday && (
                     <span
                       className="tiny"
@@ -297,7 +289,7 @@ export function TodayView() {
           })}
         </div>
         <button
-          className="btn ghost icon"
+          className="btn ghost icon day-strip-nav"
           aria-label={t('timetable.nextWeek')}
           onClick={() => handleWeekChange(7)}
         >

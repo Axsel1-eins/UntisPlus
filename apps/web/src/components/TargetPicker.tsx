@@ -21,16 +21,16 @@ export function TargetPicker({ onChange }: { onChange: (t: Target | null) => voi
 
   return (
     <>
-      <div className="row wrap" style={{ gap: 6, alignItems: 'center' }}>
+      <div className="row wrap target-picker-row" style={{ gap: 6, alignItems: 'center' }}>
         <button
           type="button"
-          className="btn sm"
+          className="btn sm target-picker-btn"
           onClick={() => setModalOpen(true)}
           style={{ gap: 6, borderColor: target ? 'var(--accent)' : 'var(--border)' }}
           title={t('timetable.targetExplorer')}
         >
           <Icon name="search" size={15} />
-          <span>
+          <span className="target-picker-btn-label">
             {target?.label
               ? target.label
               : me
@@ -40,8 +40,8 @@ export function TargetPicker({ onChange }: { onChange: (t: Target | null) => voi
         </button>
 
         <select
-          className="select"
-          style={{ minHeight: 34, maxWidth: 170, fontSize: 13, padding: '4px 8px' }}
+          className="select target-picker-select"
+          style={{ minHeight: 34, fontSize: 13, padding: '4px 8px' }}
           aria-label={t('timetable.target')}
           value={value}
           onChange={(e) => {

@@ -125,13 +125,13 @@ export function AppShell({ children }: { children: ReactNode }) {
             <Icon name="wifiOff" size={15} />
           </span>
         )}
-        <span className="chip accent" title={t('settings.role')}>
+        <span className="chip accent role-chip" title={role === 'teacher' ? t('settings.roleTeacher') : t('settings.roleStudent')}>
           <Icon name={role === 'teacher' ? 'user' : 'book'} size={14} />
-          {role === 'teacher' ? t('settings.roleTeacher') : t('settings.roleStudent')}
+          <span className="desktop-only-inline">{role === 'teacher' ? t('settings.roleTeacher') : t('settings.roleStudent')}</span>
         </span>
         {session && (
-          <span className="chip nowrap" style={{ maxWidth: 160 }} title={session.school.displayName}>
-            {session.school.displayName}
+          <span className="chip nowrap school-chip" title={session.school.displayName}>
+            <span className="school-chip-text">{session.school.displayName}</span>
           </span>
         )}
       </header>

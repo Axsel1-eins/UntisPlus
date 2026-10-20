@@ -2211,8 +2211,87 @@ label.field {
   margin-top: 2px;
 }
 
-/* Touch targets and smartphone ergonomics */
+/* Touch targets, smartphone layout & mobile ergonomics */
+.desktop-only {
+  display: inline-flex;
+}
+.desktop-only-inline {
+  display: inline;
+}
+
+/* Tap highlight removal & smooth momentum scrolling */
+button,
+a,
+input,
+select,
+textarea,
+.chip,
+.card,
+.nav-link {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.tabs,
+.mobile-day-strip,
+.week-scroll,
+.dialog {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+.tabs,
+.mobile-day-strip {
+  scrollbar-width: none;
+}
+.tabs::-webkit-scrollbar,
+.mobile-day-strip::-webkit-scrollbar {
+  display: none;
+}
+
+/* Active micro-interactions for mobile cards and buttons */
+.btn:active,
+.lesson.clickable:active,
+.module-tile:active,
+.mobile-day-pill:active,
+.mobile-more-card:active {
+  transform: scale(0.97);
+}
+
+/* Day Strip responsive pill container */
+.day-strip-container {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 12px;
+  width: 100%;
+}
+.day-strip-grid {
+  display: flex;
+  gap: 6px;
+  flex: 1;
+  justify-content: center;
+  min-width: 0;
+}
+.day-strip-pill {
+  flex-direction: column;
+  flex: 1 1 0;
+  min-width: 0;
+  max-width: 68px;
+  min-height: 52px;
+  padding: 4px 2px;
+  gap: 0;
+  position: relative;
+  transition: transform 0.08s ease, background 0.15s ease, border-color 0.15s ease;
+}
+.day-strip-pill:active {
+  transform: scale(0.95);
+}
+
+/* Mobile media query overrides */
 @media (max-width: 640px) {
+  .desktop-only,
+  .desktop-only-inline {
+    display: none !important;
+  }
   .page-title {
     font-size: 20px;
   }
@@ -2220,8 +2299,30 @@ label.field {
     padding: 12px 12px calc(var(--nav-h) + env(safe-area-inset-bottom, 0px) + 22px) 12px;
   }
   .appbar {
-    padding-left: max(12px, env(safe-area-inset-left, 0px));
-    padding-right: max(12px, env(safe-area-inset-right, 0px));
+    gap: 6px;
+    padding-left: max(10px, env(safe-area-inset-left, 0px));
+    padding-right: max(10px, env(safe-area-inset-right, 0px));
+    padding-top: max(8px, env(safe-area-inset-top, 0px));
+  }
+  .appbar .chip {
+    padding: 4px 8px;
+    font-size: 11.5px;
+  }
+  .school-chip {
+    max-width: 105px !important;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
+  }
+  .target-picker-select {
+    max-width: 125px;
+    min-height: 32px;
+    font-size: 12px;
+  }
+  .target-picker-btn {
+    min-height: 32px;
+    padding: 0 8px;
+    font-size: 12px;
   }
   .card.pad {
     padding: 13px;
@@ -2229,20 +2330,147 @@ label.field {
   .lesson {
     padding: 10px 12px;
     gap: 8px;
-    grid-template-columns: 58px 1fr auto;
+    grid-template-columns: 56px 1fr auto;
   }
   .lesson .time .start {
-    font-size: 15.5px;
+    font-size: 15px;
+  }
+  .lesson .time .end {
+    font-size: 11px;
   }
   .lesson .subject {
-    font-size: 14.5px;
+    font-size: 14px;
   }
   .lesson .meta {
-    font-size: 12px;
-    gap: 6px;
+    font-size: 11.5px;
+    gap: 5px;
   }
   .tabs {
     gap: 4px;
+  }
+  .tabs button {
+    padding: 6px 10px;
+    font-size: 12px;
+    gap: 4px;
+    flex-shrink: 0;
+  }
+  .kw-banner {
+    padding: 10px 12px;
+    gap: 8px;
+    margin-bottom: 12px;
+    border-radius: var(--radius-sm);
+  }
+  .kw-top-row {
+    gap: 6px !important;
+  }
+  .kw-badge {
+    font-size: 12.5px;
+    padding: 3px 8px;
+  }
+  .kw-range {
+    font-size: 11.5px !important;
+  }
+  .kw-nav-controls {
+    gap: 4px !important;
+  }
+  .kw-nav-controls .btn.sm {
+    padding: 0 8px;
+    min-height: 30px;
+    font-size: 12px;
+  }
+  .kw-bottom-row {
+    gap: 8px !important;
+    padding-top: 2px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .day-strip-container {
+    gap: 4px;
+  }
+  .day-strip-grid {
+    gap: 4px;
+  }
+  .day-strip-nav {
+    min-width: 32px !important;
+    width: 32px !important;
+    padding: 0 !important;
+  }
+  .day-strip-pill {
+    min-height: 48px;
+    padding: 3px 1px;
+  }
+  .day-strip-pill .day-dow {
+    font-size: 10px;
+  }
+  .day-strip-pill .day-num {
+    font-size: 15px !important;
+    font-weight: 800;
+  }
+  .lesson {
+    grid-template-columns: 50px 1fr auto;
+    gap: 6px;
+    padding: 9px 10px;
+  }
+  .lesson .side {
+    gap: 4px;
+  }
+  .lesson .side .badge {
+    padding: 2.5px 6px;
+    font-size: 10.5px;
+  }
+  .subst-highlight-box {
+    font-size: 11px;
+    padding: 4px 7px;
+  }
+}
+
+@media (max-width: 380px) {
+  .appbar {
+    gap: 4px;
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+  .school-chip {
+    max-width: 72px !important;
+  }
+  .target-picker-select {
+    max-width: 95px;
+  }
+  .target-picker-btn-label {
+    display: none;
+  }
+  .day-strip-container {
+    gap: 2px;
+  }
+  .day-strip-grid {
+    gap: 2.5px;
+  }
+  .day-strip-pill {
+    min-height: 44px;
+  }
+  .day-strip-pill .day-num {
+    font-size: 14px !important;
+  }
+}
+
+/* Bottom Navigation Active Indicator on Mobile */
+@media (max-width: 899px) {
+  .nav {
+    box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.08);
+  }
+  .nav a.active::after,
+  .nav a[aria-current='page']::after,
+  .nav button.active::after {
+    content: '';
+    position: absolute;
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 3px);
+    left: 50%;
+    transform: translateX(-50%);
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: var(--accent);
   }
 }
 
