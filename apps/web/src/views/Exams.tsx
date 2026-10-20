@@ -8,6 +8,7 @@ import { dowShort, names, primarySubject, subjectColor, subjectTextColor, todayI
 import { EmptyState, ErrorState, Icon, Segmented } from '../components/primitives.js';
 import { ListSkeleton, ModuleHeader, ModuleUnavailable, PageSubtitle } from '../components/module-ui.js';
 import { CalendarExportModal } from '../components/CalendarExportModal.js';
+import { useCustomization } from '../customization.js';
 
 export { getExamTypeBadge };
 
@@ -72,6 +73,7 @@ function daysDiff(targetIso: string, fromIso: string): number {
 /** Upcoming exams, countdown badges, study checklists, target GPA simulator, and calendar export. */
 export function ExamsView() {
   const { t, i18n } = useTranslation();
+  const c = useCustomization();
   const { master } = useApp();
   const today = todayIso();
 
@@ -86,7 +88,7 @@ export function ExamsView() {
   const mod = useModule<Exam>(() => api.exams(start, end), [start, end]);
 
   const [activeTab, setActiveTab] = useState<'list' | 'simulator'>('list');
-  const [examScope, setExamScope] = useState<'all' | 'upcoming' | 'past'>('all');
+  const [examScope, setExamScope] = useState<'all' | 'upcoming' | 'past'>(() => (c.examShowPast ? 'all' : 'upcoming'));
   const [prepMap, setPrepMap] = useState<Record<number, ExamPrepData>>(() => loadPrepData());
   const [expandedExamId, setExpandedExamId] = useState<number | null>(null);
   const [newChecklistText, setNewChecklistText] = useState('');
@@ -650,7 +652,7 @@ export function ExamsView() {
             <div className="row wrap" style={{ gap: 12, alignItems: 'center' }}>
               <div className="col" style={{ flex: 1, minWidth: 160 }}>
                 <span className="tiny muted uppercase" style={{ fontWeight: 800, letterSpacing: '0.05em' }}>
-                  Österreichischer Notenschnitt
+                  {t('exams.gpaTitle')}
                 </span>
                 <div className="row" style={{ gap: 10, alignItems: 'baseline' }}>
                   <span
@@ -669,7 +671,7 @@ export function ExamsView() {
                     {averageGpa ?? '—'}
                   </span>
                   {gradeValues.length > 0 && (
-                    <span className="small muted">({gradeValues.length} Fächer benotet)</span>
+                    <span className="small muted">({t('exams.subjectsGraded', { count: gradeValues.length })})</span>
                   )}
                 </div>
               </div>
@@ -683,12 +685,12 @@ export function ExamsView() {
                     style={{ fontSize: 14, padding: '7px 14px', fontWeight: 800, borderRadius: 999 }}
                   >
                     {hasFailingGrade
-                      ? '⚠️ Nicht Bestanden / Gefährdet'
+                      ? `⚠️ ${t('exams.statusFailed')}`
                       : isExcellent
-                      ? '🏆 Ausgezeichneter Erfolg'
+                      ? `🏆 ${t('exams.statusExcellent')}`
                       : isGood
-                      ? '🎖️ Guter Erfolg'
-                      : '✅ Bestanden'}
+                      ? `🎖️ ${t('exams.statusGood')}`
+                      : `✅ ${t('exams.statusPassed')}`}
                   </span>
                   <span className="tiny muted">{t('exams.honorHint')}</span>
                 </div>
@@ -708,19 +710,19 @@ export function ExamsView() {
             >
               <div className="row wrap" style={{ gap: 6, flex: 1 }}>
                 <span className="chip" style={{ borderLeft: '3px solid #16a34a', fontWeight: 700 }}>
-                  1️⃣ Sehr Gut: {gradeCounts[1] || 0}
+                  1️⃣ {t('exams.grade1')}: {gradeCounts[1] || 0}
                 </span>
                 <span className="chip" style={{ borderLeft: '3px solid #2563eb', fontWeight: 700 }}>
-                  2️⃣ Gut: {gradeCounts[2] || 0}
+                  2️⃣ {t('exams.grade2')}: {gradeCounts[2] || 0}
                 </span>
                 <span className="chip" style={{ borderLeft: '3px solid #eab308', fontWeight: 700 }}>
-                  3️⃣ Befriedigend: {gradeCounts[3] || 0}
+                  3️⃣ {t('exams.grade3')}: {gradeCounts[3] || 0}
                 </span>
                 <span className="chip" style={{ borderLeft: '3px solid #ea580c', fontWeight: 700 }}>
-                  4️⃣ Genügend: {gradeCounts[4] || 0}
+                  4️⃣ {t('exams.grade4')}: {gradeCounts[4] || 0}
                 </span>
                 <span className="chip" style={{ borderLeft: '3px solid #dc2626', fontWeight: 700 }}>
-                  5️⃣ Nicht Genügend: {gradeCounts[5] || 0}
+                  5️⃣ {t('exams.grade5')}: {gradeCounts[5] || 0}
                 </span>
               </div>
 
@@ -731,15 +733,15 @@ export function ExamsView() {
                     className="btn sm ghost"
                     onClick={() => {
                       if (typeof navigator !== 'undefined' && navigator.clipboard) {
-                        navigator.clipboard.writeText(`Notenschnitt: ${averageGpa}`);
+                        navigator.clipboard.writeText(`${t('exams.gpaTitle')}: ${averageGpa}`);
                         setCopiedGpa(true);
                         setTimeout(() => setCopiedGpa(false), 2000);
                       }
                     }}
-                    title="Notenschnitt kopieren"
+                    title={t('exams.copyGpa')}
                   >
                     <Icon name="check" size={13} />
-                    <span>{copiedGpa ? 'Kopiert!' : 'Kopieren'}</span>
+                    <span>{copiedGpa ? t('calendar.copied') : t('common.copy')}</span>
                   </button>
                 )}
                 {gradeValues.length > 0 && (
@@ -747,13 +749,13 @@ export function ExamsView() {
                     type="button"
                     className="btn sm ghost danger"
                     onClick={() => {
-                      if (confirm('Möchtest du wirklich alle eingetragenen Noten zurücksetzen?')) {
+                      if (confirm(t('exams.confirmResetGrades'))) {
                         setGrades({});
                       }
                     }}
-                    title="Alle Noten löschen"
+                    title={t('exams.resetGrades')}
                   >
-                    <span>Zurücksetzen</span>
+                    <span>{t('customize.reset')}</span>
                   </button>
                 )}
               </div>
@@ -765,7 +767,7 @@ export function ExamsView() {
             <input
               type="search"
               className="input sm"
-              placeholder="🔍 Fach suchen (z.B. AM, D, POS)..."
+              placeholder={t('exams.searchSubject')}
               value={subjectSearch}
               onChange={(e) => setSubjectSearch(e.target.value)}
               style={{ flex: 1, minWidth: 200 }}

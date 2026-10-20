@@ -159,7 +159,7 @@ export function TodayView() {
     const minGap = customization.breakMinMinutes ?? 5;
     let cursor: number | undefined;
     for (const lesson of dayLessons) {
-      if (cursor !== undefined && lesson.startMin - cursor >= minGap) {
+      if (customization.todayShowFreePeriods !== false && cursor !== undefined && lesson.startMin - cursor >= minGap) {
         const gap = lesson.startMin - cursor;
         let label = customization.breakShortLabel?.trim() || t('timetable.break');
         if (gap >= 25) {
@@ -173,15 +173,116 @@ export function TodayView() {
       cursor = Math.max(cursor ?? 0, lesson.endMin);
     }
     return items;
-  }, [dayLessons, customization.breakMinMinutes, customization.breakShortLabel, customization.breakLongLabel, customization.breakLunchLabel, t]);
+  }, [dayLessons, customization.breakMinMinutes, customization.breakShortLabel, customization.breakLongLabel, customization.breakLunchLabel, customization.todayShowFreePeriods, t]);
+
+  const greetingText = useMemo(() => {
+    const targetName = effectiveTarget?.label || (role === 'teacher' ? t('settings.roleTeacher') : '');
+    const nameSuffix = targetName ? ` ${targetName}` : '';
+    if (customization.todayGreetingMode === 'custom') {
+      return (customization.todayCustomGreeting || t('today.greeting')) + nameSuffix;
+    }
+    if (customization.todayGreetingMode === 'time-based') {
+      const h = now.getHours();
+      const prefix = h < 11 ? t('today.greetingMorning') : h < 17 ? t('today.greetingAfternoon') : t('today.greetingEvening');
+      return prefix + nameSuffix;
+    }
+    return t('today.greeting') + nameSuffix;
+  }, [customization.todayGreetingMode, customization.todayCustomGreeting, effectiveTarget?.label, role, now, t]);
+
+  const countdownInfo = useMemo(() => {
+    if (customization.todayShowCountdown === false || selectedDay !== today || dayLessons.length === 0) return null;
+    const currentMin = now.getHours() * 60 + now.getMinutes();
+    const nextLesson = dayLessons.find((l) => l.startMin > currentMin && l.status !== 'CANCELLED');
+    const ongoingLesson = dayLessons.find((l) => l.startMin <= currentMin && l.endMin > currentMin && l.status !== 'CANCELLED');
+    const lastLesson = [...dayLessons].sort((a, b) => b.endMin - a.endMin)[0];
+
+    if (ongoingLesson) {
+      const diff = ongoingLesson.endMin - currentMin;
+      return {
+        type: 'ongoing',
+        text: t('today.countdownEndsIn', { time: `${diff} min` }),
+        badge: 'info',
+      };
+    }
+    if (nextLesson) {
+      const diff = nextLesson.startMin - currentMin;
+      return {
+        type: 'next',
+        text: t('today.countdownStartsIn', { time: `${diff} min` }),
+        badge: 'warn',
+      };
+    }
+    if (lastLesson && currentMin >= lastLesson.endMin) {
+      return {
+        type: 'done',
+        text: t('today.countdownSchoolOver'),
+        badge: 'ok',
+      };
+    }
+    return null;
+  }, [customization.todayShowCountdown, selectedDay, today, dayLessons, now, t]);
 
   return (
     <div>
-      <div className="row wrap" style={{ gap: 12, marginBottom: 14 }}>
-        <h1 className="page-title">{t('today.title')}</h1>
+      <div className="row wrap" style={{ gap: 12, marginBottom: 8, alignItems: 'center' }}>
+        <div className="col" style={{ gap: 2 }}>
+          <h1 className="page-title" style={{ margin: 0 }}>{t('today.title')}</h1>
+          <span className="small muted" style={{ fontWeight: 600 }}>
+            {greetingText}
+          </span>
+        </div>
         <div className="spacer" />
+        {countdownInfo && (
+          <span
+            className={`badge sm ${countdownInfo.badge}`}
+            style={{ fontWeight: 700, fontVariantNumeric: 'tabular-nums', padding: '4px 10px' }}
+          >
+            ⏱️ {countdownInfo.text}
+          </span>
+        )}
         <TargetPicker onChange={setTarget} />
       </div>
+
+      {customization.todayQuickActions !== false && (
+        <div className="row wrap" style={{ gap: 6, marginBottom: 12 }}>
+          <button
+            type="button"
+            className="btn sm ghost"
+            onClick={() => navigate('timetable')}
+            style={{ fontSize: 11.5, padding: '3px 8px', borderRadius: 999 }}
+          >
+            <Icon name="grid" size={13} />
+            <span>{t('nav.timetable')}</span>
+          </button>
+          <button
+            type="button"
+            className="btn sm ghost"
+            onClick={() => navigate('subs')}
+            style={{ fontSize: 11.5, padding: '3px 8px', borderRadius: 999 }}
+          >
+            <Icon name="refresh" size={13} />
+            <span>{t('nav.substitutions')}</span>
+          </button>
+          <button
+            type="button"
+            className="btn sm ghost"
+            onClick={() => navigate('exams')}
+            style={{ fontSize: 11.5, padding: '3px 8px', borderRadius: 999 }}
+          >
+            <Icon name="gradCap" size={13} />
+            <span>{t('nav.exams')}</span>
+          </button>
+          <button
+            type="button"
+            className="btn sm ghost"
+            onClick={() => navigate('rooms')}
+            style={{ fontSize: 11.5, padding: '3px 8px', borderRadius: 999 }}
+          >
+            <Icon name="door" size={13} />
+            <span>{t('modules.rooms')}</span>
+          </button>
+        </div>
+      )}
 
       {!effectiveTarget && !loading && (
         <ErrorState message={t('timetable.chooseClass')} />

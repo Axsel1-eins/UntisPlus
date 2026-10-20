@@ -23,7 +23,13 @@ export function RoomsView() {
   const customization = useCustomization();
   const [selectedDate, setSelectedDate] = useState<string>(todayIso());
   const [query, setQuery] = useState('');
-  const [filterMode, setFilterMode] = useState<FilterMode>('all');
+  const [filterMode, setFilterMode] = useState<FilterMode>(() => {
+    if (customization.roomsOnlyFreeDefault) return 'freeNow';
+    if (customization.roomsDefaultCategory && customization.roomsDefaultCategory !== 'all') {
+      return customization.roomsDefaultCategory as FilterMode;
+    }
+    return 'all';
+  });
   const [selectedSlotIndex, setSelectedSlotIndex] = useState<number | 'now'>('now');
   const [viewMode, setViewMode] = useState<'cards' | 'matrix'>('cards');
   const [serverOccupancies, setServerOccupancies] = useState<RoomOccupancy[] | null>(null);
@@ -268,7 +274,7 @@ export function RoomsView() {
         {timeSlots.length > 0 && (
           <div className="row wrap" style={{ gap: 4, alignItems: 'center' }}>
             <span className="tiny muted" style={{ fontWeight: 700, marginRight: 4 }}>
-              Frei in Stunde:
+              {t('rooms.freeInPeriod')}:
             </span>
             <button
               type="button"
@@ -401,7 +407,7 @@ export function RoomsView() {
                       {occ.slots.map((s, idx) => (
                         <div
                           key={idx}
-                          title={`Stunde ${s.slotName}: ${s.occupied ? s.lesson?.subject ?? 'Belegt' : 'Frei'}`}
+                          title={`${t('timetable.periodNum')} ${s.slotName}: ${s.occupied ? s.lesson?.subject ?? t('rooms.legendOccupied') : t('rooms.legendFree')}`}
                           style={{
                             flex: 1,
                             height: 6,

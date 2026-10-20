@@ -17,11 +17,14 @@ import {
 import { LessonDetail } from '../components/LessonDetail.js';
 import { TargetPicker } from '../components/TargetPicker.js';
 import { Dialog, EmptyState, ErrorState, Icon, Segmented, Skeleton } from '../components/primitives.js';
+import { useCustomization } from '../customization.js';
 
 export function SubstitutionsView() {
   const { t, i18n } = useTranslation();
   const { role, setTarget } = useApp();
+  const customization = useCustomization();
   const [anchor, setAnchor] = useState<string>(todayIso());
+  const [filterScope, setFilterScope] = useState<'all' | 'mine'>(() => (customization.subsFilterMode === 'my-subjects' ? 'mine' : 'all'));
   const [viewMode, setViewMode] = useState<'week' | 'day'>(() => {
     if (typeof window !== 'undefined' && window.innerWidth < 640) {
       return 'day';
@@ -41,10 +44,19 @@ export function SubstitutionsView() {
   const selectedDay = days[Math.min(selectedDayIndex, days.length - 1)] ?? days[0]!;
 
   const modsVersion = useModsVersion();
-  const items = useMemo(
+  const allItems = useMemo(
     () => applySubstitutionTransforms(toSubstitutions(lessons)),
     [lessons, modsVersion],
   );
+
+  const items = useMemo(() => {
+    if (filterScope === 'all' || !target) return allItems;
+    return allItems.filter(
+      (i) =>
+        i.lesson.klassen.some((k) => k.id === target.id) ||
+        i.lesson.teachers.some((t) => t.id === target.id),
+    );
+  }, [allItems, filterScope, target]);
 
   const cancelledCount = items.filter((i) => i.lesson.status === 'CANCELLED').length;
   const substCount = items.filter(
@@ -121,9 +133,20 @@ export function SubstitutionsView() {
 
           <div className="spacer" />
 
+          {/* Filter Scope: Alle vs Meine */}
+          <Segmented
+            label={t('subs.scope')}
+            value={filterScope}
+            onChange={(v) => setFilterScope(v as 'all' | 'mine')}
+            options={[
+              { value: 'all', label: t('subs.all') },
+              { value: 'mine', label: t('subs.mine') },
+            ]}
+          />
+
           {/* Mode Switcher: Woche vs Tag */}
           <Segmented
-            label="Ansicht"
+            label={t('timetable.viewAs')}
             value={viewMode}
             onChange={(v) => setViewMode(v as 'week' | 'day')}
             options={[
@@ -136,13 +159,13 @@ export function SubstitutionsView() {
         {/* Weekly Stats Summary Bar */}
         <div className="row wrap" style={{ gap: 8, paddingTop: 4 }}>
           <span className="badge small danger" style={{ fontWeight: 700 }}>
-            ⚠️ {cancelledCount} Entfall / Entfälle
+            ⚠️ {t('subs.cancelledCount', { count: cancelledCount })}
           </span>
           <span className="badge small warn" style={{ fontWeight: 700 }}>
-            🔄 {substCount} Vertretung(en) / Verlegung(en)
+            🔄 {t('subs.substCount', { count: substCount })}
           </span>
           <span className="badge small ok" style={{ fontWeight: 700 }}>
-            📚 {items.length} Änderungen gesamt
+            📚 {t('subs.totalChanges', { count: items.length })}
           </span>
         </div>
       </div>

@@ -67,10 +67,10 @@ export function LessonDetail({
     const summary = `${subjectLabel(lesson)}${cancelled ? ' (ENTFALL)' : ''}`;
     const location = lesson.rooms.map((r) => r.name).join(', ');
     const desc = [
-      lesson.teachers.length > 0 ? `Lehrkraft: ${lesson.teachers.map((t) => t.name).join(', ')}` : '',
-      lesson.klassen.length > 0 ? `Klasse: ${lesson.klassen.map((k) => k.name).join(', ')}` : '',
-      lesson.substText ? `Vertretung: ${lesson.substText}` : '',
-      lesson.info ? `Notiz: ${lesson.info}` : '',
+      lesson.teachers.length > 0 ? `${t('today.teacher')}: ${lesson.teachers.map((t) => t.name).join(', ')}` : '',
+      lesson.klassen.length > 0 ? `${t('today.class')}: ${lesson.klassen.map((k) => k.name).join(', ')}` : '',
+      lesson.substText ? `${t('today.irregular')}: ${lesson.substText}` : '',
+      lesson.info ? `${t('today.note')}: ${lesson.info}` : '',
     ]
       .filter(Boolean)
       .join('\\n');
@@ -399,12 +399,12 @@ export function LessonDetail({
                 )}
                 {(ex.rooms ?? []).length > 0 && (
                   <div className="tiny muted">
-                    🏛️ Raum: {(ex.rooms ?? []).map((r) => r.name).join(', ')}
+                    🏛️ {t('today.room')}: {(ex.rooms ?? []).map((r) => r.name).join(', ')}
                   </div>
                 )}
                 {(ex.teachers ?? []).length > 0 && (
                   <div className="tiny muted">
-                    👨‍🏫 Lehrkraft: {(ex.teachers ?? []).map((t) => t.name).join(', ')}
+                    👨‍🏫 {t('today.teacher')}: {(ex.teachers ?? []).map((t) => t.name).join(', ')}
                   </div>
                 )}
               </div>
@@ -455,7 +455,7 @@ export function LessonDetail({
                     {hw.text || t('homework.title')}
                   </div>
                   {hw.dueDate && (
-                    <div className="tiny muted">Fällig: {formatDay(hw.dueDate, i18n.language)}</div>
+                    <div className="tiny muted">{t('homework.due')}: {formatDay(hw.dueDate, i18n.language)}</div>
                   )}
                 </div>
               </div>
@@ -489,7 +489,7 @@ export function LessonDetail({
         style={{ gap: 6, justifyContent: 'center' }}
       >
         <Icon name="calendar" size={15} />
-        <span>📅 In Kalender exportieren (.ics)</span>
+        <span>📅 {t('calendar.exportSingleIcs')}</span>
       </button>
     </div>
   );

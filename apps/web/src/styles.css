@@ -2486,3 +2486,27 @@ textarea,
   -webkit-user-select: text;
 }
 
+/* User-Customizable Animations */
+[data-animations="none"] *,
+[data-animations="none"] *::before,
+[data-animations="none"] *::after {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+  scroll-behavior: auto !important;
+}
+
+[data-animations="subtle"] * {
+  animation-duration: 0.15s !important;
+  transition-duration: 0.15s !important;
+}
+
+/* Timetable Cell Font Sizing */
+.tt-font-small .tlesson .subj { font-size: 11px !important; }
+.tt-font-small .tlesson .room, .tt-font-small .tlesson .teacher { font-size: 10px !important; }
+.tt-font-medium .tlesson .subj { font-size: 13px !important; }
+.tt-font-medium .tlesson .room, .tt-font-medium .tlesson .teacher { font-size: 11px !important; }
+.tt-font-large .tlesson .subj { font-size: 15px !important; font-weight: 800 !important; }
+.tt-font-large .tlesson .room, .tt-font-large .tlesson .teacher { font-size: 12.5px !important; font-weight: 600 !important; }
+
+

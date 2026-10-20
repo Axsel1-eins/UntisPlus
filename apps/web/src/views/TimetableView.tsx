@@ -76,9 +76,9 @@ export function TimetableView() {
   const [anchor, setAnchor] = useState(todayIso());
   const [mode, setMode] = useState<Mode>(() => {
     if (typeof window !== 'undefined' && window.innerWidth < 640) {
-      return 'day';
+      return customization.timetableDefaultView === 'week' ? 'week' : 'day';
     }
-    return 'week';
+    return customization.timetableDefaultView ?? 'week';
   });
   const [dayIndex, setDayIndex] = useState(() => {
     const dow = new Date().getDay();
@@ -603,7 +603,7 @@ export function TimetableView() {
             })}
           </div>
 
-          <div className="week-scroll" ref={weekScrollRef} role="region" aria-label={t('timetable.title')}>
+          <div className={`week-scroll tt-font-${customization.timetableCellFontSize || 'medium'}`} ref={weekScrollRef} role="region" aria-label={t('timetable.title')}>
             <div className="week" style={{ ['--days' as string]: days.length }}>
               {/* Top-left empty corner */}
               <div className="head" aria-hidden="true" />

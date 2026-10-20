@@ -291,7 +291,7 @@ export const DEFAULT_CUSTOMIZATION: CustomizationState = {
   cardRadius: 9,
 
   // Today View defaults
-  todayGreetingMode: 'time-based',
+  todayGreetingMode: 'standard',
   todayCustomGreeting: '',
   todayShowCountdown: true,
   todayQuickActions: true,
@@ -408,6 +408,15 @@ export function applyCustomizationToDom(state: CustomizationState): void {
     root.style.fontFamily = 'Georgia, Cambria, "Times New Roman", Times, serif';
   } else {
     root.style.fontFamily = '';
+  }
+
+  // Animation intensity level
+  if (state.animationsLevel === 'none') {
+    root.setAttribute('data-animations', 'none');
+  } else if (state.animationsLevel === 'subtle') {
+    root.setAttribute('data-animations', 'subtle');
+  } else {
+    root.removeAttribute('data-animations');
   }
 
   // Custom CSS injection

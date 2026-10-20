@@ -42,6 +42,16 @@ describe('customization module', () => {
     expect(state.privacyMode).toBe(false);
     expect(state.parallelLessonLayout).toBe('side-by-side');
     expect(state.periodHeight).toBe(84);
+    expect(state.todayGreetingMode).toBe('standard');
+    expect(state.todayShowCountdown).toBe(true);
+    expect(state.todayQuickActions).toBe(true);
+    expect(state.timetableDefaultView).toBe('week');
+    expect(state.timetableCellFontSize).toBe('medium');
+    expect(state.firstDayOfWeek).toBe('monday');
+    expect(state.subsFilterMode).toBe('all');
+    expect(state.roomsDefaultCategory).toBe('all');
+    expect(state.examGradeScale).toBe('austrian');
+    expect(state.animationsLevel).toBe('full');
   });
 
   it('contains standard Austrian school colors in AUSTRIAN_SUBJECT_PRESET', () => {
@@ -131,12 +141,14 @@ describe('customization module', () => {
         customAccent: '#06b6d4',
         cardRadius: 14,
         customFont: 'monospace' as const,
+        animationsLevel: 'none' as const,
       };
 
       applyCustomizationToDom(testState);
 
       expect(attrs.get('data-density')).toBe('compact');
       expect(attrs.get('data-privacy')).toBe('true');
+      expect(attrs.get('data-animations')).toBe('none');
       expect(attrs.get('data-week-layout')).toBe('fit');
       expect(attrs.get('data-parallel-layout')).toBe('side-by-side');
       expect(attrs.get('data-cancellation-style')).toBe('transparent');

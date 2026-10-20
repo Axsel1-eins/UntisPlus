@@ -278,6 +278,68 @@ export function CustomizeView() {
         </div>
       </div>
 
+      {/* Begrüßung & Startbildschirm (Today View) */}
+      <div className="section">
+        <h2>👋 {t('customize.todayGreetingTitle')}</h2>
+        <div className="card pad col" style={{ gap: 14 }}>
+          {/* Greeting Style */}
+          <div className="col" style={{ gap: 6 }}>
+            <span style={{ fontWeight: 600, fontSize: 14 }}>{t('customize.todayGreetingMode')}</span>
+            <Segmented
+              label={t('customize.todayGreetingMode')}
+              value={c.todayGreetingMode ?? 'standard'}
+              onChange={(v) => updateCustomization({ todayGreetingMode: v as any })}
+              options={[
+                { value: 'standard', label: t('customize.todayGreetingStandard') },
+                { value: 'time-based', label: t('customize.todayGreetingTimeBased') },
+                { value: 'custom', label: t('customize.todayGreetingCustom') },
+              ]}
+            />
+          </div>
+
+          {c.todayGreetingMode === 'custom' && (
+            <div className="col" style={{ gap: 4, paddingLeft: 4 }}>
+              <span className="small muted">{t('customize.todayGreetingCustom')}:</span>
+              <input
+                type="text"
+                className="input sm"
+                value={c.todayCustomGreeting || ''}
+                onChange={(e) => updateCustomization({ todayCustomGreeting: e.target.value })}
+                placeholder={t('customize.todayGreetingPlaceholder')}
+              />
+            </div>
+          )}
+
+          {/* Countdown Toggle */}
+          <div className="row" style={{ justifyContent: 'space-between', alignItems: 'center', paddingTop: 8, borderTop: '1px solid var(--border)' }}>
+            <div className="col" style={{ gap: 2 }}>
+              <span style={{ fontWeight: 600, fontSize: 14 }}>⏱️ {t('customize.todayCountdownTitle')}</span>
+              <span className="tiny muted">{t('customize.todayCountdownHint')}</span>
+            </div>
+            <input
+              type="checkbox"
+              checked={c.todayShowCountdown !== false}
+              onChange={(e) => updateCustomization({ todayShowCountdown: e.target.checked })}
+              style={{ width: 18, height: 18, cursor: 'pointer' }}
+            />
+          </div>
+
+          {/* Quick Actions Toggle */}
+          <div className="row" style={{ justifyContent: 'space-between', alignItems: 'center', paddingTop: 8, borderTop: '1px solid var(--border)' }}>
+            <div className="col" style={{ gap: 2 }}>
+              <span style={{ fontWeight: 600, fontSize: 14 }}>⚡ {t('customize.todayQuickActionsTitle')}</span>
+              <span className="tiny muted">{t('customize.todayQuickActionsHint')}</span>
+            </div>
+            <input
+              type="checkbox"
+              checked={c.todayQuickActions !== false}
+              onChange={(e) => updateCustomization({ todayQuickActions: e.target.checked })}
+              style={{ width: 18, height: 18, cursor: 'pointer' }}
+            />
+          </div>
+        </div>
+      </div>
+
       {/* Quick Accent Color Tuner */}
       <div className="section">
         <h2>{t('customize.accentColor')}</h2>
@@ -973,6 +1035,35 @@ export function CustomizeView() {
               ]}
             />
           </div>
+
+          {/* Standard-Ansicht beim Öffnen */}
+          <div className="col" style={{ gap: 6, paddingTop: 10, borderTop: '1px solid var(--border)' }}>
+            <span style={{ fontWeight: 600, fontSize: 14 }}>{t('customize.timetableStartupView')}</span>
+            <Segmented
+              label={t('customize.timetableStartupView')}
+              value={c.timetableDefaultView ?? 'week'}
+              onChange={(v) => updateCustomization({ timetableDefaultView: v as 'week' | 'day' })}
+              options={[
+                { value: 'week', label: t('timetable.week') },
+                { value: 'day', label: t('timetable.day') },
+              ]}
+            />
+          </div>
+
+          {/* Schriftgröße im Stundenplan */}
+          <div className="col" style={{ gap: 6, paddingTop: 10, borderTop: '1px solid var(--border)' }}>
+            <span style={{ fontWeight: 600, fontSize: 14 }}>{t('customize.timetableFontSize')}</span>
+            <Segmented
+              label={t('customize.timetableFontSize')}
+              value={c.timetableCellFontSize ?? 'medium'}
+              onChange={(v) => updateCustomization({ timetableCellFontSize: v as 'small' | 'medium' | 'large' })}
+              options={[
+                { value: 'small', label: t('customize.timetableFontSmall') },
+                { value: 'medium', label: t('customize.timetableFontMedium') },
+                { value: 'large', label: t('customize.timetableFontLarge') },
+              ]}
+            />
+          </div>
         </div>
       </div>
 
@@ -1065,6 +1156,20 @@ export function CustomizeView() {
               options={[
                 { value: 'subst-first', label: 'Vertretung (links/oben) · Entfall (rechts/unten)' },
                 { value: 'cancelled-first', label: 'Entfall (links/oben) · Vertretung (rechts/unten)' },
+              ]}
+            />
+          </div>
+
+          {/* Standard-Filter für Vertretungen */}
+          <div className="col" style={{ gap: 6, paddingTop: 10, borderTop: '1px solid var(--border)' }}>
+            <span style={{ fontWeight: 600, fontSize: 14 }}>{t('customize.subsFilterModeTitle')}</span>
+            <Segmented
+              label={t('customize.subsFilterModeTitle')}
+              value={c.subsFilterMode ?? 'all'}
+              onChange={(v) => updateCustomization({ subsFilterMode: v as 'all' | 'my-subjects' })}
+              options={[
+                { value: 'all', label: t('customize.subsFilterAll') },
+                { value: 'my-subjects', label: t('customize.subsFilterMine') },
               ]}
             />
           </div>
@@ -1194,6 +1299,24 @@ export function CustomizeView() {
                     { value: 'border-bold', label: '🚨 Fetter Rand' },
                     { value: 'card-accent', label: '🎯 Gradient' },
                     { value: 'none', label: 'Keine' },
+                  ]}
+                />
+              </div>
+
+              {/* Notensystem für Schnittrechner */}
+              <div className="col" style={{ gap: 6, paddingTop: 10, borderTop: '1px solid var(--border)' }}>
+                <span className="small" style={{ fontWeight: 600 }}>
+                  {t('customize.examGradeScaleTitle')}:
+                </span>
+                <Segmented
+                  label={t('customize.examGradeScaleTitle')}
+                  value={c.examGradeScale ?? 'austrian'}
+                  onChange={(v) => updateCustomization({ examGradeScale: v as any })}
+                  options={[
+                    { value: 'austrian', label: t('customize.examScaleAustrian') },
+                    { value: 'german', label: t('customize.examScaleGerman') },
+                    { value: 'swiss', label: t('customize.examScaleSwiss') },
+                    { value: 'points', label: t('customize.examScalePoints') },
                   ]}
                 />
               </div>
@@ -1432,6 +1555,52 @@ export function CustomizeView() {
               checked={c.privacyMode}
               onChange={(e) => updateCustomization({ privacyMode: e.target.checked })}
               style={{ width: 20, height: 20, cursor: 'pointer' }}
+            />
+          </div>
+
+          {/* Animations & Visual Motion */}
+          <div className="col" style={{ gap: 6, paddingTop: 10, borderTop: '1px solid var(--border)' }}>
+            <span style={{ fontWeight: 600, fontSize: 14 }}>{t('customize.animationsLevelTitle')}</span>
+            <Segmented
+              label={t('customize.animationsLevelTitle')}
+              value={c.animationsLevel ?? 'full'}
+              onChange={(v) => updateCustomization({ animationsLevel: v as 'full' | 'subtle' | 'none' })}
+              options={[
+                { value: 'full', label: t('customize.animFull') },
+                { value: 'subtle', label: t('customize.animSubtle') },
+                { value: 'none', label: t('customize.animNone') },
+              ]}
+            />
+          </div>
+
+          {/* Default Room Category */}
+          <div className="col" style={{ gap: 6, paddingTop: 10, borderTop: '1px solid var(--border)' }}>
+            <span style={{ fontWeight: 600, fontSize: 14 }}>{t('customize.roomsDefaultCategoryTitle')}</span>
+            <Segmented
+              label={t('customize.roomsDefaultCategoryTitle')}
+              value={c.roomsDefaultCategory ?? 'all'}
+              onChange={(v) => updateCustomization({ roomsDefaultCategory: v as any })}
+              options={[
+                { value: 'all', label: t('customize.roomsCatAll') },
+                { value: 'computer', label: t('customize.roomsCatComputer') },
+                { value: 'gym', label: t('customize.roomsCatGym') },
+                { value: 'science', label: t('customize.roomsCatScience') },
+                { value: 'special', label: t('customize.roomsCatSpecial') },
+              ]}
+            />
+          </div>
+
+          {/* Rooms only free toggle */}
+          <div className="row" style={{ justifyContent: 'space-between', alignItems: 'center', paddingTop: 8, borderTop: '1px solid var(--border)' }}>
+            <div className="col" style={{ gap: 2 }}>
+              <span style={{ fontWeight: 600, fontSize: 14 }}>🔍 {t('rooms.filterFreeOnly')}</span>
+              <span className="tiny muted">Zeigt beim Öffnen des Raumfinders standardmäßig nur aktuell freie Räume an.</span>
+            </div>
+            <input
+              type="checkbox"
+              checked={c.roomsOnlyFreeDefault}
+              onChange={(e) => updateCustomization({ roomsOnlyFreeDefault: e.target.checked })}
+              style={{ width: 18, height: 18, cursor: 'pointer' }}
             />
           </div>
         </div>
