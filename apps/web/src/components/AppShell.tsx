@@ -178,7 +178,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               </span>
               {navSize !== 'compact' && <span>{t(item.key)}</span>}
               {r === 'subs' && recentChanges.length > 0 && (
-                <span className="nav-pill warn" title={`${recentChanges.length} Änderungen`}>
+                <span className="nav-pill warn" title={t('changes.banner', { count: recentChanges.length })}>
                   {recentChanges.length}
                 </span>
               )}

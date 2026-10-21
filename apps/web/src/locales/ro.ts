@@ -85,7 +85,8 @@ export const ro = {
     "greetingEvening": "Bună seara",
     "countdownStartsIn": "Începe în {{time}}",
     "countdownEndsIn": "Se termină în {{time}}",
-    "countdownSchoolOver": "Orele s-au terminat pe ziua de azi 🎉"
+    "countdownSchoolOver": "Orele s-au terminat pe ziua de azi 🎉",
+    "liveRemaining": "În desfășurare · încă {{count}} min."
   },
   "timetable": {
     "title": "Orar",
@@ -166,7 +167,12 @@ export const ro = {
     "teacherCode": "Cod",
     "classesCount": "{{count}} clase",
     "teachersCount": "{{count}} profesori",
-    "roomsCount": "{{count}} săli"
+    "roomsCount": "{{count}} săli",
+    "favTeachers": "Profesori favoriți",
+    "favClasses": "Clase favorite",
+    "favRooms": "Săli favorite",
+    "addFavorite": "Adaugă la favorite",
+    "removeFavorite": "Elimină din favorite"
   },
   "themeStudio": {
     "title": "Studio de teme",
@@ -217,7 +223,18 @@ export const ro = {
     "accentHint": "Butoane, evidențieri și insigne",
     "paletteGenerated": "✨ Paletă armonioasă generată din culoarea de accent!",
     "cssCopied": "Variabilele CSS au fost copiate în clipboard!",
-    "templateLoaded": "„{{name}}” a fost încărcat ca șablon"
+    "templateLoaded": "„{{name}}” a fost încărcat ca șablon",
+    "copyCssTitle": "Copiază variabilele CSS în clipboard",
+    "themeNamePlaceholder": "ex. Cyber Matrix Dark",
+    "authorPlaceholder": "Numele tău",
+    "autoPaletteHint": "Calculează automat fundaluri, texte și margini armonioase din culoarea de accent",
+    "autoPalette": "Paletă automată",
+    "previewTopic": "Subiect: Calcul vectorial & sisteme liniare",
+    "previewHomeworkDue": "Temă de predat",
+    "previewPrimaryBtn": "Buton principal",
+    "previewSecondaryBtn": "Buton secundar",
+    "colorWheelTitle": "Roată culori: {{key}}",
+    "chooseColor": "Alege culoarea"
   },
   "subs": {
     "title": "Supliniri",
@@ -373,7 +390,12 @@ export const ro = {
     "noMatchingSubjects": "Nu s-au găsit materii potrivite.",
     "hideOtherSubjects": "▲ Ascunde celelalte materii",
     "showOtherSubjects": "➕ Arată celelalte materii ale școlii ({{count}} materii)",
-    "allOtherSubjects": "Toate celelalte materii ale școlii ({{count}}):"
+    "allOtherSubjects": "Toate celelalte materii ale școlii ({{count}}):",
+    "typeWritten": "Lucrare scrisă / Examen",
+    "examInSubject": "Examen la {{subject}}",
+    "titleExam": "Examen",
+    "autoSaved": "Notele se salvează automat",
+    "subjectLabel": "Materia {{code}}"
   },
   "absences": {
     "title": "Absențe & Ore lipsă",
@@ -428,7 +450,20 @@ export const ro = {
     "filterLate": "Întârziere / Transport",
     "toastSaved": "Absență salvată",
     "toastDeleted": "Înregistrare ștearsă",
-    "toastUpdated": "Stare actualizată"
+    "toastUpdated": "Stare actualizată",
+    "subjectMissed": "Materia {{subject}} ({{count}} ore absente)",
+    "writtenExcuse": "MOTIVARE SCRISĂ",
+    "excuseTitle": "Motivare",
+    "signatureParent": "Semnătură (părinte / tutore legal)",
+    "kvPlaceholder": "ex. Ionescu sau diriginte",
+    "reasonIllness": "Boală / Gripă",
+    "reasonDoctor": "Programare medic / dentist",
+    "reasonDrivingTest": "Examen permis de conducere",
+    "reasonTransitDelay": "Întârziere tren / transport",
+    "reasonOfficialAppointment": "Programare autorități / acte",
+    "reasonJobInterview": "Interviu de angajare",
+    "reasonSchoolEvent": "Activitate școlară",
+    "reasonOtherPrivate": "Alt motiv personal"
   },
   "install": {
     "title": "Instalează Untis⁺",
@@ -458,7 +493,18 @@ export const ro = {
     "iosBenefit": "Untis⁺ se deschide apoi ca o aplicație nativă, pe tot ecranul, fără bara Safari.",
     "oneClickTitle": "Instalare cu 1 clic",
     "oneClickDesc": "Instalează Untis⁺ direct din browser ca aplicație web rapidă.",
-    "installNowBtn": "Instalează acum"
+    "installNowBtn": "Instalează acum",
+    "iosStep3Add": "\"Adăugare\"",
+    "browserMenuHintDetails": "ex. Meniul browserului ⋮ → \"Instalează aplicația\" sau \"Adaugă pe ecranul principal\".",
+    "apkStep1": "Transferă sau descarcă APK-ul pe smartphone-ul Android",
+    "apkStep2": "În Android: permite \"Instalare din surse necunoscute\"",
+    "apkStep3": "Apasă pe APK pentru a instala Untis⁺ direct",
+    "copyBuildCommand": "Copiază comanda de compilare",
+    "iosWaysTitle": "Pe Apple iOS există două modalități confortabile pentru compilări proprii:",
+    "iosWayPwa": "1. 🌟 Recomandat: PWA (Fără sideloading!)",
+    "iosWayPwaDesc": "În Safari apasă pe Partajare (􀈂) → \"Adaugă pe ecranul principal\". Funcționează imediat fără limita de 7 zile!",
+    "iosWayIpa": "2. 📦 Sideloading IPA nativ (AltStore / Sideloadly)",
+    "iosWayIpaDesc": "Fluxul de lucru GitHub Actions construiește automat UntisPlus-Debug.ipa."
   },
   "messages": {
     "title": "Mesaje",
@@ -569,7 +615,10 @@ export const ro = {
     "modsOn": "{{count}} active",
     "modsOn_one": "{{count}} activ",
     "modsOn_other": "{{count}} active",
-    "modsOff": "Niciuna activă"
+    "modsOff": "Niciuna activă",
+    "badgeTeacher": "Profesor WebUntis",
+    "badgeStudent": "Elev WebUntis",
+    "privacyDelayHint": "Îți acordă 5 secunde pentru a bloca ecranul sau a minimiza aplicația"
   },
   "calendar": {
     "title": "Abonament calendar & Export",
@@ -814,7 +863,27 @@ export const ro = {
     "hsvSaturation": "Saturație (S)",
     "hsvValue": "Luminozitate (V)",
     "hsvOpen": "🎨 Deschide glisoarele HSV",
-    "hsvClose": "Închide"
+    "hsvClose": "Închide",
+    "layoutNavTitle": "Aranjament & Bară de navigare",
+    "layoutNavHint": "Interfață complet personalizabilă: mută bara de meniu, reglează lățimea sau alege aspectul preferat.",
+    "navPositionTitle": "Poziția barei de meniu",
+    "navPosSidebarLeft": "Bară laterală stânga",
+    "navPosSidebarRight": "Bară laterală dreapta",
+    "navPosNavbarTop": "Bară sus (Navbar)",
+    "navPosTaskbarBottom": "Bară jos (Taskbar)",
+    "navPosCompactFloating": "Dock flotant",
+    "navSizeTitle": "Lățime & Mărime navigare",
+    "navSizeCompact": "Compact (pictograme)",
+    "navSizeNormal": "Normal",
+    "navSizeExpanded": "Extins",
+    "logoPositionTitle": "Afișare siglă",
+    "logoPosLeft": "Stânga (aliniat)",
+    "logoPosCenter": "Centrat",
+    "logoPosHidden": "Ascuns",
+    "defaultBreakShort": "Pauză",
+    "defaultBreakLong": "Pauză mare",
+    "defaultBreakLunch": "Pauză de prânz",
+    "previewPeriods": "Ora 1, 2, 3"
   },
   "appearance": {
     "title": "Aspect",
@@ -904,7 +973,9 @@ export const ro = {
     "search": "Caută",
     "copied": "Copiat în clipboard!",
     "delete": "Șterge",
-    "days": "zile"
+    "days": "zile",
+    "chooseDate": "Alege data",
+    "status": "Stare"
   },
   "error": {
     "permission": "Acest cont nu are permisiuni pentru această acțiune.",
@@ -912,5 +983,17 @@ export const ro = {
     "auth": "Autentificare eșuată. Verifică datele de conectare.",
     "network": "Nu se poate contacta serverul.",
     "generic": "Eroare neașteptată."
+  },
+  "notify": {
+    "roomChange": "🏛️ Schimbare sală: {{subject}} la ora {{time}} în sala {{room}}",
+    "roomChangeBody": "Sală nouă: {{room}} la ora {{time}}",
+    "substTeacher": "🔄 Suplinire: {{subject}} la ora {{time}} cu {{teacher}}",
+    "substTeacherBody": "Suplinire de către {{teacher}} la ora {{time}}",
+    "substGeneral": "🔄 Suplinire: {{subject}} la ora {{time}}{{note}}",
+    "cancelledTitle": "⚠️ Anulare: {{subject}} se anulează la ora {{time}}{{reason}}",
+    "cancelledBody": "{{subject}} se anulează la ora {{time}}{{reason}}",
+    "defaultSubject": "Oră",
+    "otherRoom": "Altă sală",
+    "substitution": "Suplinire"
   }
 };
