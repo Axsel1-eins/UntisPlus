@@ -194,7 +194,7 @@ export function CalendarExportModal({
               href={effectiveWebcalUrl || '#'}
               className="btn primary"
               style={{ justifyContent: 'center', textDecoration: 'none' }}
-              title="Apple Kalender (iOS & macOS)"
+              title={t('calendar.appApple')}
             >
               <span style={{ fontSize: 16 }}>🍏</span>
               <span>{t('calendar.appApple')}</span>
@@ -207,7 +207,7 @@ export function CalendarExportModal({
               rel="noopener noreferrer"
               className="btn"
               style={{ justifyContent: 'center', textDecoration: 'none' }}
-              title="Google Calendar Web"
+              title={t('calendar.appGoogle')}
             >
               <span style={{ fontSize: 16 }}>📅</span>
               <span>{t('calendar.appGoogle')}</span>
@@ -220,7 +220,7 @@ export function CalendarExportModal({
               rel="noopener noreferrer"
               className="btn"
               style={{ justifyContent: 'center', textDecoration: 'none' }}
-              title="Microsoft Outlook Web"
+              title={t('calendar.appOutlook')}
             >
               <span style={{ fontSize: 16 }}>✉️</span>
               <span>{t('calendar.appOutlook')}</span>

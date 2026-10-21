@@ -104,7 +104,7 @@ export function InstallModal({ onClose }: InstallModalProps) {
                     {t('install.iosStep2')} <strong>"Zum Home-Bildschirm" (⊞)</strong>
                   </li>
                   <li>
-                    {t('install.iosStep3')} <strong>"Hinzufügen"</strong>
+                    {t('install.iosStep3')} <strong>{t('install.iosStep3Add')}</strong>
                   </li>
                 </ol>
                 <div className="small muted" style={{ marginTop: 8 }}>
@@ -137,7 +137,7 @@ export function InstallModal({ onClose }: InstallModalProps) {
 
                 {!canInstall && (
                   <div className="small muted" style={{ lineHeight: 1.45 }}>
-                    💡 {t('install.browserMenuHint')} (z.B. Chrome Menü ⋮ → "App installieren" oder "Zum Startbildschirm hinzufügen").
+                    💡 {t('install.browserMenuHint')} ({t('install.browserMenuHintDetails')})
                   </div>
                 )}
               </div>
@@ -186,9 +186,9 @@ export function InstallModal({ onClose }: InstallModalProps) {
 
                 <strong>{t('install.apkInstallStepsTitle')}:</strong>
                 <ol style={{ paddingLeft: 18, margin: '6px 0 0 0', display: 'flex', flexDirection: 'column', gap: 4 }}>
-                  <li>APK auf das Android-Smartphone übertragen oder herunterladen</li>
-                  <li>In Android: "Installation aus unbekannten Quellen" zulassen</li>
-                  <li>Tippe auf die APK, um Untis⁺ direkt zu installieren</li>
+                  <li>{t('install.apkStep1')}</li>
+                  <li>{t('install.apkStep2')}</li>
+                  <li>{t('install.apkStep3')}</li>
                 </ol>
               </div>
 
@@ -203,7 +203,7 @@ export function InstallModal({ onClose }: InstallModalProps) {
                   style={{ gap: 5 }}
                 >
                   <Icon name="copy" size={14} />
-                  <span>Build-Befehl kopieren</span>
+                  <span>{t('install.copyBuildCommand')}</span>
                 </button>
               </div>
             </div>
@@ -228,19 +228,19 @@ export function InstallModal({ onClose }: InstallModalProps) {
 
               <div className="small" style={{ marginTop: 12, lineHeight: 1.5 }}>
                 <p style={{ margin: '0 0 8px 0' }}>
-                  Auf Apple iOS gibt es für eigene Builds zwei bequeme Wege:
+                  {t('install.iosWaysTitle')}
                 </p>
                 <div className="col" style={{ gap: 8 }}>
                   <div className="card pad" style={{ background: 'var(--surface)', padding: 10 }}>
-                    <strong>1. 🌟 Empfohlen: PWA (Kein Sideloading nötig!)</strong>
+                    <strong>{t('install.iosWayPwa')}</strong>
                     <div className="muted" style={{ marginTop: 2 }}>
-                      In Safari auf <strong>Teilen (􀈂) → "Zum Home-Bildschirm"</strong>. Funktioniert sofort ohne 7-Tage-Zertifikat-Limit!
+                      {t('install.iosWayPwaDesc')}
                     </div>
                   </div>
                   <div className="card pad" style={{ background: 'var(--surface)', padding: 10 }}>
-                    <strong>2. 📦 Native IPA Sideloading (AltStore / Sideloadly)</strong>
+                    <strong>{t('install.iosWayIpa')}</strong>
                     <div className="muted" style={{ marginTop: 2 }}>
-                      Das GitHub Actions Workflow <code>.github/workflows/build-mobile.yml</code> baut automatisch die <code>UntisPlus-Debug.ipa</code>. Diese kann via Sideloadly, AltStore oder TrollStore installiert werden.
+                      {t('install.iosWayIpaDesc')}
                     </div>
                   </div>
                 </div>

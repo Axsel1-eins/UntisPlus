@@ -122,7 +122,7 @@ export function SubstitutionsView() {
               className="date-picker-input"
               value={anchor}
               onChange={(e) => e.target.value && setAnchor(e.target.value)}
-              aria-label="Datum wählen"
+              aria-label={t('common.chooseDate')}
             />
           </div>
 

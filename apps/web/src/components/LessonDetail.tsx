@@ -188,7 +188,7 @@ export function LessonDetail({
             }}
           >
             <span style={{ animation: 'pulse 1.5s infinite' }}>🔴</span>
-            <span>Läuft jetzt · noch {remainingLiveMin} Min.</span>
+            <span>{t('today.liveRemaining', { count: remainingLiveMin, defaultValue: `Läuft jetzt · noch ${remainingLiveMin} Min.` })}</span>
           </div>
         )}
       </div>
@@ -244,7 +244,7 @@ export function LessonDetail({
                 title={t('timetable.viewingTeacher', { name: te.name })}
               >
                 <Icon name="calendar" size={13} />
-                <span>Stundenplan</span>
+                <span>{t('nav.timetable')}</span>
               </button>
             </div>
           ))}
@@ -283,7 +283,7 @@ export function LessonDetail({
                 title={t('timetable.viewingRoom', { name: ro.name })}
               >
                 <Icon name="search" size={13} />
-                <span>Raumplan</span>
+                <span>{t('modules.rooms')}</span>
               </button>
             </div>
           ))}

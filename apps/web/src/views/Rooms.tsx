@@ -170,21 +170,21 @@ export function RoomsView() {
           className={`btn sm ${selectedDate === todayIso() ? 'primary' : 'ghost'}`}
           onClick={() => setSelectedDate(todayIso())}
         >
-          <span>Heute</span>
+          <span>{t('common.today')}</span>
         </button>
         <button
           type="button"
           className={`btn sm ${selectedDate === addDays(todayIso(), 1) ? 'primary' : 'ghost'}`}
           onClick={() => setSelectedDate(addDays(todayIso(), 1))}
         >
-          <span>Morgen</span>
+          <span>{t('today.tomorrow')}</span>
         </button>
         <input
           type="date"
           className="date-picker-input"
           value={selectedDate}
           onChange={(e) => e.target.value && setSelectedDate(e.target.value)}
-          aria-label="Datum wählen"
+          aria-label={t('common.chooseDate')}
         />
         <div className="small muted" style={{ fontWeight: 600 }}>
           {formatDay(selectedDate, i18n.language)}
@@ -472,7 +472,7 @@ export function RoomsView() {
                 >
                   {t('rooms.tableRoom')}
                 </th>
-                <th style={{ padding: '10px 8px', fontWeight: 700 }}>Status</th>
+                <th style={{ padding: '10px 8px', fontWeight: 700 }}>{t('common.status')}</th>
                 {timeSlots.map((s, idx) => (
                   <th key={idx} style={{ padding: '10px 6px', fontWeight: 700, minWidth: 46 }}>
                     {s.slotName}.

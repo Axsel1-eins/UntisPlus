@@ -396,7 +396,7 @@ export function SettingsView() {
               </div>
             </div>
             <span className="badge ok">
-              {role === 'teacher' ? 'WebUntis Lehrkraft' : 'WebUntis Schüler:in'}
+              {role === 'teacher' ? t('settings.badgeTeacher') : t('settings.badgeStudent')}
             </span>
           </div>
           <div className="tiny muted" style={{ lineHeight: 1.5 }}>
@@ -707,7 +707,7 @@ export function SettingsView() {
                 disabled={testingNotify}
                 onClick={() => void runTest(5)}
                 style={{ gap: 6 }}
-                title="Gibt dir 5 Sekunden Zeit, das Display zu sperren oder die App zu minimieren"
+                title={t('settings.privacyDelayHint')}
               >
                 <Icon name="clock" size={15} />
                 <span>

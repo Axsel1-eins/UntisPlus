@@ -113,7 +113,7 @@ export function TargetModal({
               onClick={() => setTab('favorites')}
             >
               <span>⭐</span>
-              <span>Favoriten</span>
+              <span>{t('targetModal.tabFavorites')}</span>
               <span className="badge small ok">{totalFavs}</span>
             </button>
           )}
@@ -242,7 +242,7 @@ export function TargetModal({
               <>
                 {favTeachers.length > 0 && (
                   <div className="col" style={{ gap: 6 }}>
-                    <span style={{ fontWeight: 800, fontSize: 13 }}>👨‍🏫 Favorisierte Lehrkräfte</span>
+                    <span style={{ fontWeight: 800, fontSize: 13 }}>👨‍🏫 {t('targetModal.favTeachers')}</span>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 8 }}>
                       {favTeachers.map((te) => (
                         <TeacherCard
@@ -264,7 +264,7 @@ export function TargetModal({
 
                 {favKlassen.length > 0 && (
                   <div className="col" style={{ gap: 6 }}>
-                    <span style={{ fontWeight: 800, fontSize: 13 }}>👥 Favorisierte Klassen</span>
+                    <span style={{ fontWeight: 800, fontSize: 13 }}>👥 {t('targetModal.favClasses')}</span>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 8 }}>
                       {favKlassen.map((k) => (
                         <KlasseCard
@@ -280,7 +280,7 @@ export function TargetModal({
 
                 {favRooms.length > 0 && (
                   <div className="col" style={{ gap: 6 }}>
-                    <span style={{ fontWeight: 800, fontSize: 13 }}>🏛️ Favorisierte Räume</span>
+                    <span style={{ fontWeight: 800, fontSize: 13 }}>🏛️ {t('targetModal.favRooms')}</span>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 8 }}>
                       {favRooms.map((r) => (
                         <RoomCard
@@ -506,6 +506,7 @@ function TeacherCard({
   isActive: boolean;
   onPick: () => void;
 }) {
+  const { t } = useTranslation();
   const isFav = isFavorite('teachers', teacher.id);
   return (
     <div
@@ -543,7 +544,7 @@ function TeacherCard({
         <span style={{ fontWeight: 700, fontSize: 13 }} className="nowrap">
           {teacher.longName || teacher.name}
         </span>
-        <span className="tiny muted nowrap">Code: {teacher.name}</span>
+        <span className="tiny muted nowrap">{t('targetModal.teacherCode')}: {teacher.name}</span>
       </div>
 
       <button
@@ -560,7 +561,7 @@ function TeacherCard({
           e.stopPropagation();
           toggleFavorite('teachers', teacher.id);
         }}
-        title={isFav ? 'Aus Favoriten entfernen' : 'Zu Favoriten hinzufügen'}
+        title={isFav ? t('targetModal.removeFavorite') : t('targetModal.addFavorite')}
       >
         {isFav ? '⭐' : '☆'}
       </button>
@@ -579,6 +580,7 @@ function KlasseCard({
   isActive: boolean;
   onPick: () => void;
 }) {
+  const { t } = useTranslation();
   const isFav = isFavorite('klassen', klasse.id);
   return (
     <div
@@ -620,7 +622,7 @@ function KlasseCard({
           e.stopPropagation();
           toggleFavorite('klassen', klasse.id);
         }}
-        title={isFav ? 'Aus Favoriten entfernen' : 'Zu Favoriten hinzufügen'}
+        title={isFav ? t('targetModal.removeFavorite') : t('targetModal.addFavorite')}
       >
         {isFav ? '⭐' : '☆'}
       </button>
@@ -639,6 +641,7 @@ function RoomCard({
   isActive: boolean;
   onPick: () => void;
 }) {
+  const { t } = useTranslation();
   const isFav = isFavorite('rooms', room.id);
   return (
     <div
@@ -680,7 +683,7 @@ function RoomCard({
           e.stopPropagation();
           toggleFavorite('rooms', room.id);
         }}
-        title={isFav ? 'Aus Favoriten entfernen' : 'Zu Favoriten hinzufügen'}
+        title={isFav ? t('targetModal.removeFavorite') : t('targetModal.addFavorite')}
       >
         {isFav ? '⭐' : '☆'}
       </button>

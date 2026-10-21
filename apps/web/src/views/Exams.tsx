@@ -127,8 +127,8 @@ export function ExamsView() {
           subject: subj,
           teachers: l.teachers ?? [],
           rooms: l.rooms ?? [],
-          type: 'Schularbeit / Prüfung',
-          text: l.info || l.substText || (subj ? `Prüfung in ${subj.name}` : 'Prüfung'),
+          type: t('exams.typeWritten'),
+          text: l.info || l.substText || (subj ? t('exams.examInSubject', { subject: subj.name }) : t('exams.titleExam')),
         });
       }
     }
@@ -780,7 +780,7 @@ export function ExamsView() {
               <span style={{ fontWeight: 800, fontSize: 15 }}>
                 {t('exams.mySubjectsCount', { count: visibleMySubjects.length })}
               </span>
-              <span className="tiny muted">Noten werden automatisch gespeichert</span>
+              <span className="tiny muted">{t('exams.autoSaved')}</span>
             </div>
 
             <div className="col" style={{ gap: 8 }}>
@@ -846,11 +846,11 @@ export function ExamsView() {
                       {/* Grade Selector (1 to 5) with Austrian colors */}
                       <div className="row" style={{ gap: 6 }}>
                         {[
-                          { grade: 1, label: '1', name: 'Sehr Gut', color: '#16a34a' },
-                          { grade: 2, label: '2', name: 'Gut', color: '#2563eb' },
-                          { grade: 3, label: '3', name: 'Befriedigend', color: '#eab308' },
-                          { grade: 4, label: '4', name: 'Genügend', color: '#ea580c' },
-                          { grade: 5, label: '5', name: 'Nicht Genügend', color: '#dc2626' },
+                          { grade: 1, label: '1', name: t('exams.grade1'), color: '#16a34a' },
+                          { grade: 2, label: '2', name: t('exams.grade2'), color: '#2563eb' },
+                          { grade: 3, label: '3', name: t('exams.grade3'), color: '#eab308' },
+                          { grade: 4, label: '4', name: t('exams.grade4'), color: '#ea580c' },
+                          { grade: 5, label: '5', name: t('exams.grade5'), color: '#dc2626' },
                         ].map(({ grade, label, name, color }) => {
                           const isSelected = currentGrade === grade;
                           return (
@@ -959,11 +959,11 @@ export function ExamsView() {
 
                           <div className="row" style={{ gap: 6 }}>
                             {[
-                              { grade: 1, label: '1', name: 'Sehr Gut', color: '#16a34a' },
-                              { grade: 2, label: '2', name: 'Gut', color: '#2563eb' },
-                              { grade: 3, label: '3', name: 'Befriedigend', color: '#eab308' },
-                              { grade: 4, label: '4', name: 'Genügend', color: '#ea580c' },
-                              { grade: 5, label: '5', name: 'Nicht Genügend', color: '#dc2626' },
+                              { grade: 1, label: '1', name: t('exams.grade1'), color: '#16a34a' },
+                              { grade: 2, label: '2', name: t('exams.grade2'), color: '#2563eb' },
+                              { grade: 3, label: '3', name: t('exams.grade3'), color: '#eab308' },
+                              { grade: 4, label: '4', name: t('exams.grade4'), color: '#ea580c' },
+                              { grade: 5, label: '5', name: t('exams.grade5'), color: '#dc2626' },
                             ].map(({ grade, label, name, color }) => {
                               const isSelected = currentGrade === grade;
                               return (

@@ -326,7 +326,7 @@ export function AbsencesView() {
               {atRiskSubjects.map((s) => (
                 <div key={s.subject} className="row" style={{ justifyContent: 'space-between', marginTop: 2 }}>
                   <span>
-                    Fach <strong>{s.subject}</strong> ({s.missed} Fehlstunden)
+                    {t('absences.subjectMissed', { subject: s.subject, count: s.missed })}
                   </span>
                   <span className={`badge ${s.percent >= 20 ? 'irregular' : 'subst'}`}>
                     {s.percent}% Quote
@@ -585,25 +585,25 @@ function AddAbsenceModal({
   const { t } = useTranslation();
   const today = todayIso();
 
+  const REASON_PRESETS = [
+    t('absences.reasonIllness'),
+    t('absences.reasonDoctor'),
+    t('absences.reasonDrivingTest'),
+    t('absences.reasonTransitDelay'),
+    t('absences.reasonOfficialAppointment'),
+    t('absences.reasonJobInterview'),
+    t('absences.reasonSchoolEvent'),
+    t('absences.reasonOtherPrivate'),
+  ];
+
   const [date, setDate] = useState(today);
   const [periods, setPeriods] = useState('1');
-  const [reasonCategory, setReasonCategory] = useState('Krankheit');
+  const [reasonCategory, setReasonCategory] = useState(REASON_PRESETS[0] || 'Krankheit');
   const [customReason, setCustomReason] = useState('');
   const [subjectName, setSubjectName] = useState('');
   const [hasAttest, setHasAttest] = useState(false);
   const [status, setStatus] = useState<'offen' | 'abgegeben' | 'bestaetigt'>('offen');
   const [notes, setNotes] = useState('');
-
-  const REASON_PRESETS = [
-    'Krankheit / Grippe',
-    'Arzt- / Zahnarzttermin',
-    'Führerscheinprüfung',
-    'ÖBB / Zugverspätung',
-    'Amtlicher Behördenweg',
-    'Bewerbungsgespräch',
-    'Schulische Veranstaltung',
-    'Sonstiger privater Grund',
-  ];
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -800,7 +800,7 @@ function ExcuseLetterModal({
         <!DOCTYPE html>
         <html>
         <head>
-          <title>Entschuldigung - ${studentName}</title>
+          <title>${t('absences.excuseTitle')} - ${studentName}</title>
           <style>
             body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; line-height: 1.6; padding: 40px; max-width: 700px; margin: auto; }
             h1 { font-size: 20px; border-bottom: 2px solid #333; padding-bottom: 8px; margin-bottom: 24px; }
@@ -810,10 +810,10 @@ function ExcuseLetterModal({
           </style>
         </head>
         <body>
-          <h1>SCHRIFTLICHE ENTSCHULDIGUNG</h1>
-          <div class="date">${formatDay(todayIso(), 'de')}</div>
+          <h1>${t('absences.writtenExcuse')}</h1>
+          <div class="date">${formatDay(todayIso(), i18n.language)}</div>
           <pre>${letterBody}</pre>
-          <div class="sig">______________________________<br><small>Unterschrift (Erziehungsberechtigte / Eigenberechtigte:r)</small></div>
+          <div class="sig">______________________________<br><small>${t('absences.signatureParent')}</small></div>
           <script>window.onload = function() { window.print(); }</script>
         </body>
         </html>
@@ -840,7 +840,7 @@ function ExcuseLetterModal({
               className="input"
               value={kvName}
               onChange={(e) => setKvName(e.target.value)}
-              placeholder="z.B. Schmidt oder Klassenvorstand"
+              placeholder={t('absences.kvPlaceholder')}
             />
           </div>
 

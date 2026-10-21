@@ -267,35 +267,35 @@ export function formatLessonChangeNotification(c: LessonChange): {
   url: string;
   tag: string;
 } {
-  const subject = c.subject || 'Unterricht';
+  const subject = c.subject || i18n.t('notify.defaultSubject', 'Unterricht');
   const time = minutesToTime(c.startMin);
   const reason = c.reason || c.text;
 
   if (c.kind === 'CANCELLED') {
     const reasonStr = reason ? ` (${reason})` : '';
     return {
-      title: `⚠️ Entfall: ${subject} entfällt um ${time}${reasonStr}`,
-      body: `${subject} entfällt um ${time}${reasonStr}`,
+      title: i18n.t('notify.cancelledTitle', { subject, time, reason: reasonStr }),
+      body: i18n.t('notify.cancelledBody', { subject, time, reason: reasonStr }),
       url: 'subs',
       tag: `untisplus-cancel-${c.id}`,
     };
   }
 
   if (c.kind === 'ROOM_CHANGE') {
-    const room = c.room || c.text || 'Anderer Raum';
+    const room = c.room || c.text || i18n.t('notify.otherRoom', 'Anderer Raum');
     return {
-      title: `🏛️ Raumänderung: ${subject} um ${time} in Raum ${room}`,
-      body: `Neuer Raum: ${room} um ${time}`,
+      title: i18n.t('notify.roomChange', { subject, time, room }),
+      body: i18n.t('notify.roomChangeBody', { room, time }),
       url: 'subs',
       tag: `untisplus-room-${c.id}`,
     };
   }
 
   if (c.kind === 'TEACHER_CHANGE') {
-    const teacher = c.teacher || c.text || 'Vertretung';
+    const teacher = c.teacher || c.text || i18n.t('notify.substitution', 'Vertretung');
     return {
-      title: `🔄 Vertretung: ${subject} um ${time} bei ${teacher}`,
-      body: `Vertretung durch ${teacher} um ${time}`,
+      title: i18n.t('notify.substTeacher', { subject, time, teacher }),
+      body: i18n.t('notify.substTeacherBody', { teacher, time }),
       url: 'subs',
       tag: `untisplus-teacher-${c.id}`,
     };
@@ -303,7 +303,7 @@ export function formatLessonChangeNotification(c: LessonChange): {
 
   const note = c.text ? ` (${c.text})` : '';
   return {
-    title: `🔄 Vertretung: ${subject} um ${time}${note}`,
+    title: i18n.t('notify.substGeneral', { subject, time, note }),
     body: `${describeChange(c)}${note}`,
     url: 'subs',
     tag: `untisplus-subst-${c.id}`,

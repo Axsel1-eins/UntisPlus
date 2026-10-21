@@ -223,55 +223,55 @@ export function CustomizeView() {
 
       {/* Layout & Navigation Customization */}
       <div className="section" style={{ marginTop: 0 }}>
-        <h2>🧭 Layout & Navigationsleiste</h2>
+        <h2>🧭 {t('customize.layoutNavTitle')}</h2>
         <div className="card pad col" style={{ gap: 14 }}>
           <div className="small muted">
-            Vollständig anpassbare Benutzeroberfläche: Verschiebe die Menüleiste, passe die Breite an oder wähle dein bevorzugtes Desktop- und Mobil-Layout.
+            {t('customize.layoutNavHint')}
           </div>
 
           {/* Navigation Position */}
           <div className="col" style={{ gap: 6 }}>
-            <span style={{ fontWeight: 600, fontSize: 14 }}>Position der Menüleiste</span>
+            <span style={{ fontWeight: 600, fontSize: 14 }}>{t('customize.navPositionTitle')}</span>
             <Segmented
-              label="Position der Menüleiste"
+              label={t('customize.navPositionTitle')}
               value={c.navPosition ?? 'sidebar-left'}
               onChange={(v) => updateCustomization({ navPosition: v as any })}
               options={[
-                { value: 'sidebar-left', label: 'Sidebar Links' },
-                { value: 'sidebar-right', label: 'Sidebar Rechts' },
-                { value: 'navbar-top', label: 'Navbar Oben' },
-                { value: 'taskbar-bottom', label: 'Taskbar Unten' },
-                { value: 'compact-floating', label: 'Floating Dock' },
+                { value: 'sidebar-left', label: t('customize.navPosSidebarLeft') },
+                { value: 'sidebar-right', label: t('customize.navPosSidebarRight') },
+                { value: 'navbar-top', label: t('customize.navPosNavbarTop') },
+                { value: 'taskbar-bottom', label: t('customize.navPosTaskbarBottom') },
+                { value: 'compact-floating', label: t('customize.navPosCompactFloating') },
               ]}
             />
           </div>
 
           {/* Navigation Size */}
           <div className="col" style={{ gap: 6, paddingTop: 10, borderTop: '1px solid var(--border)' }}>
-            <span style={{ fontWeight: 600, fontSize: 14 }}>Breite & Größe der Navigation</span>
+            <span style={{ fontWeight: 600, fontSize: 14 }}>{t('customize.navSizeTitle')}</span>
             <Segmented
-              label="Größe der Navigation"
+              label={t('customize.navSizeTitle')}
               value={c.navSize ?? 'normal'}
               onChange={(v) => updateCustomization({ navSize: v as any })}
               options={[
-                { value: 'compact', label: 'Kompakt (Icons)' },
-                { value: 'normal', label: 'Normal' },
-                { value: 'expanded', label: 'Erweitert' },
+                { value: 'compact', label: t('customize.navSizeCompact') },
+                { value: 'normal', label: t('customize.navSizeNormal') },
+                { value: 'expanded', label: t('customize.navSizeExpanded') },
               ]}
             />
           </div>
 
           {/* Logo Position */}
           <div className="col" style={{ gap: 6, paddingTop: 10, borderTop: '1px solid var(--border)' }}>
-            <span style={{ fontWeight: 600, fontSize: 14 }}>Logo-Darstellung</span>
+            <span style={{ fontWeight: 600, fontSize: 14 }}>{t('customize.logoPositionTitle')}</span>
             <Segmented
-              label="Logo-Darstellung"
+              label={t('customize.logoPositionTitle')}
               value={c.logoPosition ?? 'left'}
               onChange={(v) => updateCustomization({ logoPosition: v as any })}
               options={[
-                { value: 'left', label: 'Links (bündig)' },
-                { value: 'center', label: 'Zentriert' },
-                { value: 'hidden', label: 'Ausblenden' },
+                { value: 'left', label: t('customize.logoPosLeft') },
+                { value: 'center', label: t('customize.logoPosCenter') },
+                { value: 'hidden', label: t('customize.logoPosHidden') },
               ]}
             />
           </div>
@@ -752,8 +752,8 @@ export function CustomizeView() {
                   <label className="tiny muted">{t('customize.breakShortLabel')}</label>
                   <input
                     type="text"
-                    value={c.breakShortLabel ?? 'Pause'}
-                    placeholder="Pause"
+                    value={c.breakShortLabel ?? t('customize.defaultBreakShort')}
+                    placeholder={t('customize.defaultBreakShort')}
                     onChange={(e) => updateCustomization({ breakShortLabel: e.target.value })}
                     style={{
                       padding: '6px 10px',
@@ -770,8 +770,8 @@ export function CustomizeView() {
                   <label className="tiny muted">{t('customize.breakLongLabel')}</label>
                   <input
                     type="text"
-                    value={c.breakLongLabel ?? 'Große Pause'}
-                    placeholder="Große Pause"
+                    value={c.breakLongLabel ?? t('customize.defaultBreakLong')}
+                    placeholder={t('customize.defaultBreakLong')}
                     onChange={(e) => updateCustomization({ breakLongLabel: e.target.value })}
                     style={{
                       padding: '6px 10px',
@@ -788,8 +788,8 @@ export function CustomizeView() {
                   <label className="tiny muted">{t('customize.breakLunchLabel')}</label>
                   <input
                     type="text"
-                    value={c.breakLunchLabel ?? 'Mittagspause'}
-                    placeholder="Mittagspause"
+                    value={c.breakLunchLabel ?? t('customize.defaultBreakLunch')}
+                    placeholder={t('customize.defaultBreakLunch')}
                     onChange={(e) => updateCustomization({ breakLunchLabel: e.target.value })}
                     style={{
                       padding: '6px 10px',
@@ -869,7 +869,7 @@ export function CustomizeView() {
           <div className="row" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
             <div className="col" style={{ gap: 2 }}>
               <span style={{ fontWeight: 600, fontSize: 14 }}>{t('customize.showPeriodNumber')}</span>
-              <span className="tiny muted">1., 2., 3. Stunde</span>
+              <span className="tiny muted">{t('customize.previewPeriods')}</span>
             </div>
             <input
               type="checkbox"

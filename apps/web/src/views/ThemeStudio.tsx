@@ -301,7 +301,7 @@ export function ThemeStudioView() {
           <div className="small muted">{t('themeStudio.subtitle')}</div>
         </div>
         <div className="spacer" />
-        <button className="btn" onClick={handleCopyCss} type="button" title="CSS-Variablen in die Zwischenablage kopieren">
+        <button className="btn" onClick={handleCopyCss} type="button" title={t('themeStudio.copyCssTitle')}>
           <Icon name="copy" size={16} />
           <span>CSS</span>
         </button>
@@ -341,7 +341,7 @@ export function ThemeStudioView() {
                   className="input"
                   value={themeName}
                   onChange={(e) => setThemeName(e.target.value)}
-                  placeholder="z. B. Cyber Matrix Dark"
+                  placeholder={t('themeStudio.themeNamePlaceholder')}
                 />
               </div>
               <div style={{ flex: 1, minWidth: 120 }}>
@@ -351,7 +351,7 @@ export function ThemeStudioView() {
                   className="input"
                   value={themeAuthor}
                   onChange={(e) => setThemeAuthor(e.target.value)}
-                  placeholder="Dein Name"
+                  placeholder={t('themeStudio.authorPlaceholder')}
                 />
               </div>
             </div>
@@ -370,8 +370,8 @@ export function ThemeStudioView() {
                   }
                 }}
                 options={[
-                  { value: 'dark', label: '🌙 Dunkel' },
-                  { value: 'light', label: '☀️ Hell' },
+                  { value: 'dark', label: `🌙 ${t('theme.dark')}` },
+                  { value: 'light', label: `☀️ ${t('theme.light')}` },
                 ]}
               />
             </div>
@@ -386,10 +386,10 @@ export function ThemeStudioView() {
                 className="btn sm ghost"
                 onClick={handleGeneratePalette}
                 style={{ fontSize: 12, gap: 4, color: 'var(--accent)', fontWeight: 700 }}
-                title="Berechnet automatisch aufeinander abgestimmte Hintergründe, Texte und Rahmen aus der gewählten Akzentfarbe"
+                title={t('themeStudio.autoPaletteHint')}
               >
                 <span>✨</span>
-                <span>Auto-Palette</span>
+                <span>{t('themeStudio.autoPalette')}</span>
               </button>
             </div>
 
@@ -490,7 +490,7 @@ export function ThemeStudioView() {
                 value={fontFamily}
                 onChange={(v) => setFontFamily(v as 'default' | 'monospace' | 'inter' | 'serif')}
                 options={[
-                  { value: 'default', label: 'System' },
+                  { value: 'default', label: t('theme.system', 'System') },
                   { value: 'inter', label: 'Inter' },
                   { value: 'monospace', label: 'Mono' },
                   { value: 'serif', label: 'Serif' },
@@ -559,11 +559,11 @@ export function ThemeStudioView() {
               </div>
 
               <div style={{ fontWeight: 650, fontSize: 14 }}>Prof. Mag. Schmidt (SMI)</div>
-              <div className="small muted">Thema: Vektorrechnung & Lineare Gleichungssysteme</div>
+              <div className="small muted">{t('themeStudio.previewTopic')}</div>
 
               <div className="row wrap" style={{ gap: 6, marginTop: 4 }}>
-                <span className="badge warn">🔄 Vertretung</span>
-                <span className="badge danger">⚠️ Hausübung fällig</span>
+                <span className="badge warn">🔄 {t('nav.substitutions')}</span>
+                <span className="badge danger">⚠️ {t('themeStudio.previewHomeworkDue')}</span>
               </div>
             </div>
 
@@ -575,14 +575,14 @@ export function ThemeStudioView() {
                 style={{ borderRadius: `${tokens.radius}px` }}
               >
                 <Icon name="calendar" size={16} />
-                <span>Primary Button</span>
+                <span>{t('themeStudio.previewPrimaryBtn')}</span>
               </button>
               <button
                 type="button"
                 className="btn"
                 style={{ borderRadius: `${tokens.radius}px` }}
               >
-                <span>Secondary Button</span>
+                <span>{t('themeStudio.previewSecondaryBtn')}</span>
               </button>
             </div>
 
@@ -610,7 +610,7 @@ export function ThemeStudioView() {
       <Dialog
         open={Boolean(hsvTargetKey)}
         onClose={() => setHsvTargetKey(null)}
-        title={hsvTargetKey ? `Farbrad: ${String(hsvTargetKey)}` : 'Farbe wählen'}
+        title={hsvTargetKey ? t('themeStudio.colorWheelTitle', { key: String(hsvTargetKey) }) : t('themeStudio.chooseColor')}
       >
         {hsvTargetKey && (
           <div style={{ display: 'flex', justifyContent: 'center', padding: '10px 0' }}>
