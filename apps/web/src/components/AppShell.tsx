@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useApp } from '../store.js';
 import { navigate, useRouteInfo, type Route } from '../router.js';
@@ -49,6 +49,19 @@ export function AppShell({ children }: { children: ReactNode }) {
   useModsVersion();
   const toasts = useToasts();
   const [moreOpen, setMoreOpen] = useState(false);
+  const [showScrollTop, setShowScrollTop] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowScrollTop(window.scrollY > 240);
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const handleScrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   const navPosition = customization.navPosition ?? 'sidebar-left';
   const navSize = customization.navSize ?? 'normal';
@@ -381,6 +394,16 @@ export function AppShell({ children }: { children: ReactNode }) {
         )}
         {children}
       </main>
+
+      <button
+        type="button"
+        className={`scroll-top-btn ${showScrollTop ? 'visible' : ''}`}
+        onClick={handleScrollToTop}
+        aria-label={t('common.scrollToTop')}
+        title={t('common.scrollToTop')}
+      >
+        <Icon name="arrowUp" size={20} />
+      </button>
 
       <div className="toasts" aria-live="polite">
         {toasts.map((toast) => (

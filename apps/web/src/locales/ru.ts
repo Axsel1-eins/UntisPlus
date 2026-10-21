@@ -816,6 +816,7 @@ export const ru = {
       retry: 'Повторить попытку',
       refresh: 'Обновить',
       close: 'Закрыть',
+      scrollToTop: 'Наверх',
       save: 'Сохранить',
       cancel: 'Отмена',
       today: 'Сегодня',

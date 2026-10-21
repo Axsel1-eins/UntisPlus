@@ -829,6 +829,7 @@ export const es = {
       retry: 'Reintentar',
       refresh: 'Actualizar',
       close: 'Cerrar',
+      scrollToTop: 'Volver arriba',
       save: 'Guardar',
       cancel: 'Cancelar',
       today: 'Hoy',

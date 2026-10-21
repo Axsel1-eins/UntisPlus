@@ -53,14 +53,23 @@
   box-sizing: border-box;
 }
 
-html,
-body,
-#root {
-  height: 100%;
+html {
+  min-height: 100%;
+  min-height: -webkit-fill-available;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: auto;
 }
 
 body {
+  min-height: 100%;
+  min-height: 100dvh;
+  min-height: -webkit-fill-available;
   margin: 0;
+  overflow-x: hidden;
+  overscroll-behavior-y: auto;
+  -webkit-overflow-scrolling: touch;
   background: var(--bg);
   color: var(--text);
   font-family: var(
@@ -78,6 +87,13 @@ body {
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+}
+
+#root {
+  min-height: 100%;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
 }
 
 button,
@@ -562,7 +578,11 @@ label.field {
 /* --- week grid --- */
 .week-scroll {
   overflow-x: auto;
+  overflow-y: visible;
+  overscroll-behavior-x: contain;
+  overscroll-behavior-y: auto;
   -webkit-overflow-scrolling: touch;
+  touch-action: pan-x pan-y;
 }
 .week {
   display: grid;
@@ -2233,10 +2253,59 @@ textarea,
 
 .tabs,
 .mobile-day-strip,
-.week-scroll,
+.week-scroll {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+  overscroll-behavior-y: auto;
+  touch-action: pan-x pan-y;
+}
+
 .dialog {
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
+}
+
+/* Floating Scroll to Top Quick Action */
+.scroll-top-btn {
+  position: fixed;
+  z-index: 38;
+  right: 14px;
+  bottom: calc(var(--nav-h) + env(safe-area-inset-bottom, 0px) + 14px);
+  width: 42px;
+  height: 42px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--border);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.22);
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: opacity 0.2s ease, transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), background 0.15s ease;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(12px) scale(0.88);
+}
+.scroll-top-btn.visible {
+  opacity: 0.95;
+  pointer-events: auto;
+  transform: translateY(0) scale(1);
+}
+.scroll-top-btn:hover {
+  opacity: 1;
+  background: var(--surface-2);
+  transform: translateY(-2px) scale(1.04);
+}
+.scroll-top-btn:active {
+  transform: scale(0.92);
+}
+@media (min-width: 900px) {
+  .scroll-top-btn {
+    bottom: 24px;
+    right: 24px;
+  }
 }
 .tabs,
 .mobile-day-strip {

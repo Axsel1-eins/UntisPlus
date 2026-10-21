@@ -891,6 +891,7 @@ export const ro = {
     "retry": "Reîncearcă",
     "refresh": "Actualizează",
     "close": "Închide",
+    "scrollToTop": "Derulează sus",
     "save": "Salvează",
     "cancel": "Anulează",
     "today": "Astăzi",

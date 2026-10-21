@@ -12,7 +12,7 @@ npm run build
 
 # 2. Sync web assets into Capacitor iOS project
 echo "🔄 Syncing Capacitor iOS project..."
-npm --prefix "$REPO_ROOT/apps/web" run cap:sync ios
+npm --prefix "$REPO_ROOT/apps/web" run cap:sync:ios
 
 IOS_DIR="$REPO_ROOT/apps/web/ios/App"
 OUT_DIR="$REPO_ROOT/dist-mobile"

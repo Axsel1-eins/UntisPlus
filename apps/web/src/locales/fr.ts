@@ -829,6 +829,7 @@ export const fr = {
       retry: 'Réessayer',
       refresh: 'Actualiser',
       close: 'Fermer',
+      scrollToTop: 'Haut de page',
       save: 'Enregistrer',
       cancel: 'Annuler',
       today: "Aujourd'hui",

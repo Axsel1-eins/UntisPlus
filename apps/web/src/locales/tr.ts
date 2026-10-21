@@ -816,6 +816,7 @@ export const tr = {
       retry: 'Tekrar dene',
       refresh: 'Yenile',
       close: 'Kapat',
+      scrollToTop: 'Yukarı kaydır',
       save: 'Kaydet',
       cancel: 'İptal',
       today: 'Bugün',

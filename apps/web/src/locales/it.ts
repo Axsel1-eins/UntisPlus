@@ -829,6 +829,7 @@ export const it = {
       retry: 'Riprova',
       refresh: 'Aggiorna',
       close: 'Chiudi',
+      scrollToTop: 'Torna su',
       save: 'Salva',
       cancel: 'Annulla',
       today: 'Oggi',

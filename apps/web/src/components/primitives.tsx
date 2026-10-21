@@ -20,6 +20,8 @@ const ICONS: Record<string, string[]> = {
   user: ['M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8z', 'M4 21a8 8 0 0 1 16 0'],
   chevronRight: ['M9 6l6 6-6 6'],
   chevronLeft: ['M15 6l-6 6 6 6'],
+  chevronUp: ['M18 15l-6-6-6 6'],
+  arrowUp: ['M12 19V5', 'M5 12l7-7 7 7'],
   clock: ['M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z', 'M12 7v5l3 2'],
   mapPin: ['M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11z', 'M12 12a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z'],
   book: ['M4 4h11a3 3 0 0 1 3 3v13H7a3 3 0 0 1-3-3z', 'M17 7h3v13H7'],

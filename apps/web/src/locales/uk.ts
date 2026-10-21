@@ -816,6 +816,7 @@ export const uk = {
       retry: 'Спробувати знову',
       refresh: 'Оновити',
       close: 'Закрити',
+      scrollToTop: 'Вгору',
       save: 'Зберегти',
       cancel: 'Скасувати',
       today: 'Сьогодні',

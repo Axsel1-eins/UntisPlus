@@ -816,6 +816,7 @@ export const ar = {
       retry: 'إعادة المحاولة',
       refresh: 'تحديث',
       close: 'إغلاق',
+      scrollToTop: 'التمرير لأعلى',
       save: 'حفظ',
       cancel: 'إلغاء',
       today: 'اليوم',

@@ -816,6 +816,7 @@ export const bs = {
       retry: 'Pokušaj ponovo',
       refresh: 'Osvježi',
       close: 'Zatvori',
+      scrollToTop: 'Pomakni na vrh',
       save: 'Spasi',
       cancel: 'Otkaži',
       today: 'Danas',
