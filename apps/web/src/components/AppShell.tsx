@@ -34,8 +34,10 @@ const MORE_MODULES: { route: Route; icon: string; titleKey: string; hintKey: str
   { route: 'absences', icon: 'calendarX', titleKey: 'modules.absences', hintKey: 'absences.subtitle' },
   { route: 'rooms', icon: 'grid', titleKey: 'modules.rooms', hintKey: 'rooms.subtitle' },
   { route: 'messages', icon: 'mail', titleKey: 'modules.messages', hintKey: 'messages.subtitle' },
+  { route: 'appearance', icon: 'palette', titleKey: 'appearance.title', hintKey: 'appearance.builtinHint' },
   { route: 'theme-studio', icon: 'palette', titleKey: 'themeStudio.title', hintKey: 'themeStudio.tileHint' },
   { route: 'customize', icon: 'sliders', titleKey: 'customize.title', hintKey: 'customize.subtitle' },
+  { route: 'mods', icon: 'puzzle', titleKey: 'mods.title', hintKey: 'mods.subtitle' },
   { route: 'settings', icon: 'more', titleKey: 'settings.title', hintKey: 'settings.account' },
 ];
 

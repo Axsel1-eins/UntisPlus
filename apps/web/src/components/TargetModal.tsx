@@ -95,7 +95,7 @@ export function TargetModal({
     <Dialog open={open} onClose={onClose} title={t('targetModal.title')}>
       <div className="col" style={{ gap: 12, maxHeight: '72vh', overflowY: 'auto' }}>
         {/* Navigation Tabs */}
-        <div className="segmented wrap" role="tablist">
+        <div className="segmented target-modal-tabs" role="tablist">
           <button
             type="button"
             role="tab"

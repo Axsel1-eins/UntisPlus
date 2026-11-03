@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { addDays, deduplicateExams, isExamForLesson, type Exam, type Holiday, type Homework, type Lesson } from '@untisplus/shared';
 import { api } from '../api.js';
@@ -53,6 +53,37 @@ export function TodayView() {
   const [selectedDay, setSelectedDay] = useState(todayIso());
   const [detail, setDetail] = useState<Lesson | null>(null);
   const [calModalOpen, setCalModalOpen] = useState(false);
+
+  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (e.touches.length === 1) {
+      touchStartRef.current = { x: e.touches[0]!.clientX, y: e.touches[0]!.clientY };
+    }
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (!touchStartRef.current || e.changedTouches.length === 0) return;
+    const dx = e.changedTouches[0]!.clientX - touchStartRef.current.x;
+    const dy = e.changedTouches[0]!.clientY - touchStartRef.current.y;
+    touchStartRef.current = null;
+    if (Math.abs(dx) > 48 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+      const idx = days.indexOf(selectedDay);
+      if (dx < 0) {
+        if (idx >= 0 && idx < days.length - 1) {
+          setSelectedDay(days[idx + 1]!);
+        } else {
+          handleWeekChange(7);
+        }
+      } else {
+        if (idx > 0) {
+          setSelectedDay(days[idx - 1]!);
+        } else {
+          handleWeekChange(-7);
+        }
+      }
+    }
+  };
 
   const handleWeekChange = (offsetDays: number) => {
     setAnchor((prev) => addDays(prev, offsetDays));
@@ -223,7 +254,7 @@ export function TodayView() {
   }, [customization.todayShowCountdown, selectedDay, today, dayLessons, now, t]);
 
   return (
-    <div>
+    <div onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
       <div className="row wrap" style={{ gap: 12, marginBottom: 8, alignItems: 'center' }}>
         <div className="col" style={{ gap: 2 }}>
           <h1 className="page-title" style={{ margin: 0 }}>{t('today.title')}</h1>

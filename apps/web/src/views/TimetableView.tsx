@@ -365,14 +365,54 @@ export function TimetableView() {
     return combined;
   }, [dayLessons, showBreaks, customization.breakMinMinutes, customization.breakShortLabel, customization.breakLongLabel, customization.breakLunchLabel, t]);
 
+  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
+
+  function handleDayTouchStart(e: React.TouchEvent) {
+    if (e.touches.length === 1) {
+      touchStartRef.current = { x: e.touches[0]!.clientX, y: e.touches[0]!.clientY };
+    }
+  }
+
+  function handleDayTouchEnd(e: React.TouchEvent) {
+    if (!touchStartRef.current || e.changedTouches.length === 0) return;
+    const dx = e.changedTouches[0]!.clientX - touchStartRef.current.x;
+    const dy = e.changedTouches[0]!.clientY - touchStartRef.current.y;
+    touchStartRef.current = null;
+    if (Math.abs(dx) > 48 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+      if (dx < 0) {
+        if (dayIndex < days.length - 1) {
+          setDayIndex(dayIndex + 1);
+        } else {
+          setAnchor((prev) => addDays(prev, 7));
+          setDayIndex(0);
+        }
+      } else {
+        if (dayIndex > 0) {
+          setDayIndex(dayIndex - 1);
+        } else {
+          setAnchor((prev) => addDays(prev, -7));
+          setDayIndex(days.length - 1);
+        }
+      }
+    }
+  }
+
   function scrollToDay(index: number) {
     setDayIndex(index);
     if (!weekScrollRef.current) return;
-    const colWidth = 140;
-    weekScrollRef.current.scrollTo({
-      left: Math.max(0, index * colWidth - 20),
-      behavior: 'smooth',
-    });
+    const container = weekScrollRef.current;
+    const heads = container.querySelectorAll<HTMLElement>('.week .head');
+    const targetHead = heads[index + 1];
+    if (targetHead) {
+      const leftOffset = Math.max(0, targetHead.offsetLeft - 62);
+      container.scrollTo({ left: leftOffset, behavior: 'smooth' });
+    } else {
+      const colWidth = 140;
+      container.scrollTo({
+        left: Math.max(0, index * colWidth - 20),
+        behavior: 'smooth',
+      });
+    }
   }
 
   return (
@@ -385,13 +425,13 @@ export function TimetableView() {
         {/* Prominent Teacher & Class Explorer Button */}
         <button
           type="button"
-          className="btn sm primary desktop-only"
+          className="btn sm primary"
           onClick={() => setTargetExplorerOpen(true)}
           style={{ gap: 6 }}
           title={t('timetable.targetExplorer')}
         >
           <Icon name="search" size={15} />
-          <span>{t('timetable.targetExplorer')}</span>
+          <span className="desktop-only-inline">{t('timetable.targetExplorer')}</span>
         </button>
 
         {/* Calendar Export & Sync Button */}
@@ -654,47 +694,78 @@ export function TimetableView() {
 
       {/* Day Timetable View */}
       {!loading && !error && mode === 'day' && (
-        <div>
-          <div className="tabs" style={{ marginBottom: 14 }}>
-            {days.map((day, i) => {
-              const dayHoliday = getDayHoliday(day);
-              const dayHasExams = cleanExams.some((e) => e.date === day);
-              return (
-                <button
-                  key={day}
-                  className="btn sm"
-                  onClick={() => setDayIndex(i)}
-                  style={{
-                    flex: '1 1 0',
-                    minWidth: 0,
-                    padding: '6px 2px',
-                    ...(i === dayIndex
-                      ? { background: 'var(--accent)', borderColor: 'var(--accent)', color: 'var(--accent-ink)' }
-                      : {}),
-                  }}
-                >
-                  {dowShort(day, i18n.language)} {Number(day.slice(-2))}
-                  {dayHoliday && (
-                    <span title={dayHoliday.name} style={{ marginLeft: 3, fontSize: '0.8rem' }}>
-                      🍂
+        <div onTouchStart={handleDayTouchStart} onTouchEnd={handleDayTouchEnd}>
+          <div className="day-strip-container" style={{ marginBottom: 16 }}>
+            <button
+              className="btn ghost icon day-strip-nav"
+              aria-label={t('timetable.prevWeek')}
+              onClick={() => setAnchor((prev) => addDays(prev, -7))}
+            >
+              <Icon name="chevronLeft" size={18} />
+            </button>
+            <div className="day-strip-grid">
+              {days.map((day, i) => {
+                const active = i === dayIndex;
+                const isToday = day === todayIso();
+                const dayHoliday = getDayHoliday(day);
+                const dayHasExams = cleanExams.some((e) => e.date === day);
+                return (
+                  <button
+                    key={day}
+                    className={`btn sm day-strip-pill ${active ? 'active' : ''}`}
+                    type="button"
+                    onClick={() => setDayIndex(i)}
+                    style={{
+                      background: active ? 'var(--accent)' : 'var(--surface)',
+                      borderColor: active ? 'var(--accent)' : 'var(--border)',
+                      color: active ? 'var(--accent-ink)' : 'var(--text)',
+                    }}
+                  >
+                    <span className="tiny day-dow" style={{ opacity: 0.8 }}>
+                      {dowShort(day, i18n.language)}
                     </span>
-                  )}
-                  {dayHasExams && (
-                    <span
-                      title={t('today.examsOnDay')}
-                      style={{
-                        marginLeft: 3,
-                        fontSize: '0.75rem',
-                        color: i === dayIndex ? 'inherit' : '#ef4444',
-                        fontWeight: 900,
-                      }}
-                    >
-                      ●
+                    <span className="day-num" style={{ fontWeight: 800, fontSize: 17 }}>
+                      {Number(day.slice(-2))}
                     </span>
-                  )}
-                </button>
-              );
-            })}
+                    <div className="row day-dots" style={{ gap: 3, alignItems: 'center', height: 10 }}>
+                      {isToday && (
+                        <span
+                          className="tiny"
+                          style={{ opacity: 0.9, textDecoration: active ? 'none' : 'underline' }}
+                        >
+                          •
+                        </span>
+                      )}
+                      {dayHoliday && (
+                        <span title={dayHoliday.name} style={{ fontSize: 9, lineHeight: 1 }}>
+                          🍂
+                        </span>
+                      )}
+                      {dayHasExams && (
+                        <span
+                          title={t('today.examsOnDay')}
+                          style={{
+                            fontSize: 9,
+                            color: active ? 'var(--accent-ink)' : '#ef4444',
+                            fontWeight: 900,
+                            lineHeight: 1,
+                          }}
+                        >
+                          ●
+                        </span>
+                      )}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+            <button
+              className="btn ghost icon day-strip-nav"
+              aria-label={t('timetable.nextWeek')}
+              onClick={() => setAnchor((prev) => addDays(prev, 7))}
+            >
+              <Icon name="chevronRight" size={18} />
+            </button>
           </div>
 
           <h2 className="section" style={{ marginTop: 0 }}>

@@ -2369,6 +2369,8 @@ textarea,
   }
   .appbar {
     gap: 6px;
+    min-height: calc(var(--header-h) + env(safe-area-inset-top, 0px));
+    height: auto;
     padding-left: max(10px, env(safe-area-inset-left, 0px));
     padding-right: max(10px, env(safe-area-inset-right, 0px));
     padding-top: max(8px, env(safe-area-inset-top, 0px));
@@ -2382,6 +2384,13 @@ textarea,
     text-overflow: ellipsis;
     overflow: hidden;
     white-space: nowrap;
+  }
+  .school-chip-text {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    display: block;
   }
   .target-picker-select {
     max-width: 125px;
@@ -2477,12 +2486,32 @@ textarea,
     font-weight: 800;
   }
   .lesson {
-    grid-template-columns: 50px 1fr auto;
-    gap: 6px;
-    padding: 9px 10px;
+    display: grid;
+    grid-template-columns: 52px 1fr;
+    grid-template-areas:
+      "time body"
+      "time side";
+    gap: 4px 10px;
+    padding: 10px 12px;
+    align-items: center;
+  }
+  .lesson .time {
+    grid-area: time;
+    align-self: center;
+  }
+  .lesson .body {
+    grid-area: body;
+    min-width: 0;
   }
   .lesson .side {
+    grid-area: side;
+    display: flex;
+    flex-wrap: wrap;
     gap: 4px;
+    align-items: center;
+  }
+  .lesson .side:empty {
+    display: none;
   }
   .lesson .side .badge {
     padding: 2.5px 6px;
@@ -2491,6 +2520,30 @@ textarea,
   .subst-highlight-box {
     font-size: 11px;
     padding: 4px 7px;
+  }
+  .target-modal-tabs {
+    display: flex !important;
+    overflow-x: auto !important;
+    white-space: nowrap !important;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    max-width: 100%;
+  }
+  .target-modal-tabs::-webkit-scrollbar {
+    display: none;
+  }
+  .target-modal-tabs button {
+    flex-shrink: 0;
+  }
+  .grade-selector-row {
+    display: grid !important;
+    grid-template-columns: repeat(5, 1fr) !important;
+    gap: 6px !important;
+    width: 100% !important;
+  }
+  .grade-selector-row button {
+    width: 100% !important;
+    height: 38px !important;
   }
 }
 

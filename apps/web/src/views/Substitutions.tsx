@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { addDays, minutesToTime, type Lesson } from '@untisplus/shared';
 import { useApp } from '../store.js';
@@ -36,6 +36,37 @@ export function SubstitutionsView() {
     return dow === 0 || dow === 6 ? 0 : dow - 1;
   });
   const [detail, setDetail] = useState<Lesson | null>(null);
+  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
+
+  const handleDayTouchStart = (e: React.TouchEvent) => {
+    if (e.touches.length === 1) {
+      touchStartRef.current = { x: e.touches[0]!.clientX, y: e.touches[0]!.clientY };
+    }
+  };
+
+  const handleDayTouchEnd = (e: React.TouchEvent) => {
+    if (!touchStartRef.current || e.changedTouches.length === 0) return;
+    const dx = e.changedTouches[0]!.clientX - touchStartRef.current.x;
+    const dy = e.changedTouches[0]!.clientY - touchStartRef.current.y;
+    touchStartRef.current = null;
+    if (Math.abs(dx) > 48 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+      if (dx < 0) {
+        if (selectedDayIndex < days.length - 1) {
+          setSelectedDayIndex(selectedDayIndex + 1);
+        } else {
+          setAnchor((prev) => addDays(prev, 7));
+          setSelectedDayIndex(0);
+        }
+      } else {
+        if (selectedDayIndex > 0) {
+          setSelectedDayIndex(selectedDayIndex - 1);
+        } else {
+          setAnchor((prev) => addDays(prev, -7));
+          setSelectedDayIndex(days.length - 1);
+        }
+      }
+    }
+  };
 
   const { lessons, loading, error, reload, weekStart, target } = useWeekLessons(anchor);
   const effectiveTarget = useEffectiveTarget();
@@ -213,44 +244,67 @@ export function SubstitutionsView() {
 
       {/* Day View: Specific day tabs and listing */}
       {!loading && !error && viewMode === 'day' && (
-        <div className="col" style={{ gap: 14 }}>
-          <div className="tabs">
-            {days.map((day, i) => {
-              const daySubs = items.filter((it) => it.lesson.date === day);
-              const isActive = i === selectedDayIndex;
-              return (
-                <button
-                  key={day}
-                  type="button"
-                  className="btn sm"
-                  onClick={() => setSelectedDayIndex(i)}
-                  style={{
-                    flex: '1 1 0',
-                    minWidth: 0,
-                    padding: '6px 2px',
-                    ...(isActive
-                      ? {
-                          background: 'var(--accent)',
-                          borderColor: 'var(--accent)',
-                          color: 'var(--accent-ink)',
-                        }
-                      : {}),
-                  }}
-                >
-                  <span>
-                    {dowShort(day, i18n.language)} {Number(day.slice(-2))}
-                  </span>
-                  {daySubs.length > 0 && (
-                    <span
-                      className={`badge small ${isActive ? 'ok' : 'warn'}`}
-                      style={{ marginLeft: 4, padding: '1px 5px', fontSize: 10 }}
-                    >
-                      {daySubs.length}
+        <div className="col" style={{ gap: 14 }} onTouchStart={handleDayTouchStart} onTouchEnd={handleDayTouchEnd}>
+          <div className="day-strip-container" style={{ marginBottom: 4 }}>
+            <button
+              className="btn ghost icon day-strip-nav"
+              aria-label={t('timetable.prevWeek')}
+              onClick={() => setAnchor((prev) => addDays(prev, -7))}
+            >
+              <Icon name="chevronLeft" size={18} />
+            </button>
+            <div className="day-strip-grid">
+              {days.map((day, i) => {
+                const daySubs = items.filter((it) => it.lesson.date === day);
+                const isActive = i === selectedDayIndex;
+                const isToday = day === todayIso();
+                return (
+                  <button
+                    key={day}
+                    type="button"
+                    className={`btn sm day-strip-pill ${isActive ? 'active' : ''}`}
+                    onClick={() => setSelectedDayIndex(i)}
+                    style={{
+                      background: isActive ? 'var(--accent)' : 'var(--surface)',
+                      borderColor: isActive ? 'var(--accent)' : 'var(--border)',
+                      color: isActive ? 'var(--accent-ink)' : 'var(--text)',
+                    }}
+                  >
+                    <span className="tiny day-dow" style={{ opacity: 0.8 }}>
+                      {dowShort(day, i18n.language)}
                     </span>
-                  )}
-                </button>
-              );
-            })}
+                    <span className="day-num" style={{ fontWeight: 800, fontSize: 17 }}>
+                      {Number(day.slice(-2))}
+                    </span>
+                    <div className="row day-dots" style={{ gap: 3, alignItems: 'center', height: 10 }}>
+                      {isToday && (
+                        <span
+                          className="tiny"
+                          style={{ opacity: 0.9, textDecoration: isActive ? 'none' : 'underline' }}
+                        >
+                          •
+                        </span>
+                      )}
+                      {daySubs.length > 0 && (
+                        <span
+                          className={`badge small ${isActive ? 'ok' : 'warn'}`}
+                          style={{ padding: '0 4px', fontSize: 9, lineHeight: 1 }}
+                        >
+                          {daySubs.length}
+                        </span>
+                      )}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+            <button
+              className="btn ghost icon day-strip-nav"
+              aria-label={t('timetable.nextWeek')}
+              onClick={() => setAnchor((prev) => addDays(prev, 7))}
+            >
+              <Icon name="chevronRight" size={18} />
+            </button>
           </div>
 
           <h2 className="section" style={{ marginTop: 0 }}>

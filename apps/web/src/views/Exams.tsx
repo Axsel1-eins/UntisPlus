@@ -796,7 +796,7 @@ export function ExamsView() {
                   return (
                     <div
                       key={sub.code}
-                      className="row wrap"
+                      className="row wrap grade-row-container"
                       style={{
                         padding: '10px 14px',
                         background: `color-mix(in srgb, ${color} 4%, var(--surface-2))`,
@@ -844,7 +844,7 @@ export function ExamsView() {
                       </div>
 
                       {/* Grade Selector (1 to 5) with Austrian colors */}
-                      <div className="row" style={{ gap: 6 }}>
+                      <div className="row grade-selector-row" style={{ gap: 6 }}>
                         {[
                           { grade: 1, label: '1', name: t('exams.grade1'), color: '#16a34a' },
                           { grade: 2, label: '2', name: t('exams.grade2'), color: '#2563eb' },
