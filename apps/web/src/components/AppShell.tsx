@@ -324,10 +324,13 @@ export function AppShell({ children }: { children: ReactNode }) {
                       <div className="mm-icon">
                         <Icon name={m.icon} size={19} />
                       </div>
-                      <div className="col" style={{ gap: 1, minWidth: 0 }}>
+                      <div className="col" style={{ gap: 1, minWidth: 0, flex: 1 }}>
                         <div className="mm-title nowrap">{t(m.titleKey)}</div>
                         <div className="mm-desc nowrap">{t(m.hintKey)}</div>
                       </div>
+                      <span className="mm-arrow">
+                        <Icon name="chevronRight" size={16} />
+                      </span>
                     </button>
                   );
                 })}
@@ -364,10 +367,13 @@ export function AppShell({ children }: { children: ReactNode }) {
                         <div className="mm-icon">
                           <Icon name={m.icon ?? 'puzzle'} size={19} />
                         </div>
-                        <div className="col" style={{ gap: 1, minWidth: 0 }}>
+                        <div className="col" style={{ gap: 1, minWidth: 0, flex: 1 }}>
                           <div className="mm-title nowrap">{m.label}</div>
                           <div className="mm-desc nowrap">{t('mods.fromMod')}</div>
                         </div>
+                        <span className="mm-arrow">
+                          <Icon name="chevronRight" size={16} />
+                        </span>
                       </button>
                     );
                   })}

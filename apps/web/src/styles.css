@@ -1423,7 +1423,9 @@ label.field {
   width: 100%;
   max-width: 520px;
   max-height: 86dvh;
-  overflow: auto;
+  overflow-x: hidden;
+  overflow-y: auto;
+  box-sizing: border-box;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
@@ -1443,6 +1445,9 @@ label.field {
   .dialog {
     max-width: 100% !important;
     max-height: 88dvh;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    box-sizing: border-box;
     border-bottom-left-radius: 0;
     border-bottom-right-radius: 0;
     border-bottom: none;
@@ -2170,23 +2175,27 @@ label.field {
 .mobile-more-sheet {
   max-width: 540px;
   width: 100%;
+  box-sizing: border-box;
 }
 .mobile-more-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
   margin-top: 8px;
+  width: 100%;
+  box-sizing: border-box;
 }
-@media (max-width: 380px) {
+@media (max-width: 640px) {
   .mobile-more-grid {
     grid-template-columns: 1fr;
+    gap: 8px;
   }
 }
 .mobile-more-card {
   display: flex;
   align-items: center;
-  gap: 11px;
-  padding: 11px 12px;
+  gap: 12px;
+  padding: 11px 14px;
   border-radius: var(--radius);
   background: var(--surface-2);
   border: 1px solid var(--border);
@@ -2195,9 +2204,11 @@ label.field {
   cursor: pointer;
   transition: transform 0.08s ease, background 0.15s ease, border-color 0.15s ease;
   width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
 }
 .mobile-more-card:active {
-  transform: scale(0.97);
+  transform: scale(0.98);
   background: var(--surface-3);
 }
 .mobile-more-card.active {
@@ -2205,9 +2216,9 @@ label.field {
   background: var(--accent-soft);
 }
 .mobile-more-card .mm-icon {
-  width: 34px;
-  height: 34px;
-  border-radius: 9px;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
   display: grid;
   place-items: center;
   flex: none;
@@ -2221,14 +2232,25 @@ label.field {
 }
 .mobile-more-card .mm-title {
   font-weight: 700;
-  font-size: 13px;
+  font-size: 13.5px;
   line-height: 1.25;
 }
 .mobile-more-card .mm-desc {
-  font-size: 11px;
+  font-size: 11.5px;
   color: var(--muted);
   line-height: 1.2;
   margin-top: 2px;
+}
+.mobile-more-card .mm-arrow {
+  color: var(--muted);
+  opacity: 0.4;
+  margin-left: auto;
+  flex: none;
+}
+.mobile-more-card:active .mm-arrow,
+.mobile-more-card.active .mm-arrow {
+  color: var(--accent);
+  opacity: 1;
 }
 
 /* Touch targets, smartphone layout & mobile ergonomics */
