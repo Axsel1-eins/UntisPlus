@@ -37,10 +37,12 @@ if command -v xcodebuild >/dev/null 2>&1; then
   cd "$OUT_DIR"
   zip -qr "UntisPlus-unsigned.ipa" Payload
   rm -rf Payload
+  cp -f "UntisPlus-unsigned.ipa" "UntisPlus.ipa"
 
   echo "✅ Success! iOS IPA packaged:"
   echo "   📁 $OUT_DIR/UntisPlus-unsigned.ipa"
-  ls -lh "$OUT_DIR/UntisPlus-unsigned.ipa"
+  echo "   📁 $OUT_DIR/UntisPlus.ipa"
+  ls -lh "$OUT_DIR/UntisPlus-unsigned.ipa" "$OUT_DIR/UntisPlus.ipa"
 else
   echo "ℹ️ Note: macOS with Xcode is required to run native arm64 iOS compilation directly."
   echo "   On Linux/Windows, you can:"

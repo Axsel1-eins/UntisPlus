@@ -7,6 +7,22 @@ presents it better — for **students and teachers** alike. German first, Englis
 
 ---
 
+## 📱 Mobile Apps & Releases (Android APK & iOS IPA)
+
+Untis⁺ is available as both a web application/PWA and native mobile app bundles for Android and Apple iOS:
+
+- 📥 **[Download Latest Releases (APK & IPA)](https://github.com/Axsel1-eins/UntisPlus/releases)**:
+  - **Android APK**: `UntisPlus.apk` / `UntisPlus-debug.apk` (directly installable on Android)
+  - **Apple iOS IPA**: `UntisPlus.ipa` / `UntisPlus-unsigned.ipa` (unsigned for AltStore / SideStore / TrollStore sideloading)
+  - **Checksums**: `SHA256SUMS.txt`
+- 🤖 **Automated CI/CD Builds**: Every GitHub Release and version tag automatically compiles the Android APK and iOS IPA via [GitHub Actions](.github/workflows/build-mobile.yml) and attaches the binaries to the release.
+- 🛠️ **Local Build Commands**:
+  - `npm run build:apk` (or `bash scripts/build-apk.sh`)
+  - `npm run build:ipa` (or `bash scripts/build-ipa.sh`)
+- 📖 **Details & Installation Guide**: See [HOSTING-AND-DEPLOYMENT.md](HOSTING-AND-DEPLOYMENT.md#4-android-apk--ios-ipa-downloads--github-releases) for sideloading and manual installation steps.
+
+---
+
 ## Why
 
 WebUntis works, but people miss changes: substitutions are confusing, push notifications only
