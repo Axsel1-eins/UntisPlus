@@ -80,20 +80,26 @@ git push -u origin main
 
 ---
 
-## 4. Android APK & iOS IPA Downloads
+## 4. Android APK & iOS IPA Downloads & GitHub Releases
 
-Das Repository verfügt über einen automatisierten **GitHub Actions Workflow** (`.github/workflows/build-mobile.yml`), der bei jedem Push automatisch auf Linux und macOS gebaut wird:
+Untis⁺ bietet fertige Mobile-Builds für Android und iOS. Sowohl die **Android APK** als auch die **iOS IPA** werden bei jedem Release automatisch via **GitHub Actions** gebaut und als Download an den GitHub Release angehängt.
+
+### 📥 Download fertiger Releases (APK & IPA)
+Alle Versionen und Downloads findest du direkt unter:
+👉 **[GitHub Releases](https://github.com/Axsel1-eins/UntisPlus/releases)**
+
+Dort sind bei jedem Release folgende Dateien direkt angehängt:
+- `UntisPlus.apk` / `UntisPlus-debug.apk` (Android APK — direkt installierbar)
+- `UntisPlus.ipa` / `UntisPlus-unsigned.ipa` (Apple iOS IPA — ungesignt für Sideloading / AltStore / TrollStore)
+- `SHA256SUMS.txt` (Prüfsummen zur Integritätsprüfung)
 
 ### 🤖 Android (APK)
-- **Lokaler Build:** Führe einfach `bash scripts/build-apk.sh` aus.
-  - Das fertige Paket liegt unter: `dist-mobile/UntisPlus-debug.apk`
+- **Download:** Lade `UntisPlus.apk` aus dem neuesten [GitHub Release](https://github.com/Axsel1-eins/UntisPlus/releases) herunter.
 - **Installation:** Die APK-Datei auf dein Android-Smartphone übertragen (z. B. via USB, Google Drive oder WhatsApp/Telegram) und anklicken. Bei Nachfrage "Installation aus unbekannten Quellen" für den Dateimanager zulassen.
+- **Lokaler Build:** Führe einfach `bash scripts/build-apk.sh` aus (erzeugt `dist-mobile/UntisPlus.apk`).
 
 ### 🍏 Apple iOS (IPA)
-- **Automatischer Build via GitHub Actions:**
-  - Klicke in deinem GitHub-Repository auf den Reiter **Actions**.
-  - Wähle den letzten erfolgreichen Workflow **Build Mobile Apps (APK & iOS)**.
-  - Lade unter **Artifacts** die Datei `UntisPlus-iOS-Debug-IPA` herunter.
+- **Download:** Lade `UntisPlus.ipa` aus dem neuesten [GitHub Release](https://github.com/Axsel1-eins/UntisPlus/releases) herunter.
 - **Installation auf dem iPhone/iPad (ohne Jailbreak):**
   1. **AltStore / SideStore:** (Kostenlos mit deiner normalen Apple-ID)
      - AltServer auf PC/Mac starten, AltStore auf dem iPhone installieren.
@@ -106,6 +112,16 @@ Das Repository verfügt über einen automatisierten **GitHub Actions Workflow** 
   npx cap sync ios
   npx cap open ios # Öffnet das fertige Projekt direkt in Xcode zum Ausführen auf deinem iPhone
   ```
+
+### 🚀 Automatische Release-Erstellung (GitHub Actions)
+Der Workflow `.github/workflows/build-mobile.yml` hängt APK und IPA automatisch an einen Release an:
+1. **GitHub Release veröffentlichen:** Auf GitHub unter Releases auf *Draft a new release* klicken und veröffentlichen. Der Workflow startet automatisch, baut APK & IPA und hängt sie an.
+2. **Git-Tag pushen:**
+   ```bash
+   git tag v0.1.0
+   git push origin v0.1.0
+   ```
+3. **Manuell via Actions (Workflow Dispatch):** Unter *Actions* → *Build Mobile Apps (APK & iOS)* → *Run workflow* auswählen und *Publish assets to a GitHub Release* ankreuzen.
 
 ---
 

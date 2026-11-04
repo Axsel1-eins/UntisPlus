@@ -3,8 +3,35 @@ name: Build Mobile Apps (APK & iOS)
 on:
   push:
     branches: [main, master]
+    tags: ['v*', '[0-9]+.*']
   pull_request:
+  release:
+    types: [published]
   workflow_dispatch:
+    inputs:
+      create_release:
+        description: 'Publish assets to a GitHub Release'
+        required: false
+        type: boolean
+        default: false
+      tag_name:
+        description: 'Tag name for release (e.g. v0.1.0)'
+        required: false
+        type: string
+        default: 'v0.1.0'
+      release_title:
+        description: 'Release Title'
+        required: false
+        type: string
+        default: 'Untis⁺ Mobile Release'
+      prerelease:
+        description: 'Mark as pre-release'
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
 
 jobs:
   build-android:
@@ -50,11 +77,19 @@ jobs:
         working-directory: apps/web/android
         run: ./gradlew assembleDebug --no-daemon
 
+      - name: Prepare Android APK Binaries
+        run: |
+          mkdir -p dist-apk
+          APK_SRC="apps/web/android/app/build/outputs/apk/debug/app-debug.apk"
+          cp "$APK_SRC" dist-apk/UntisPlus.apk
+          cp "$APK_SRC" dist-apk/UntisPlus-debug.apk
+          ls -lh dist-apk/
+
       - name: Upload Android APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: UntisPlus-Android-Debug-APK
-          path: apps/web/android/app/build/outputs/apk/debug/app-debug.apk
+          path: dist-apk/
           if-no-files-found: error
 
   build-ios:
@@ -120,11 +155,90 @@ jobs:
           cd build/ipa_payload
           zip -qry ../UntisPlus-unsigned.ipa Payload
           cd .. && rm -rf ipa_payload
-          ls -lh UntisPlus-unsigned.ipa
+          cp UntisPlus-unsigned.ipa UntisPlus.ipa
+          ls -lh UntisPlus-unsigned.ipa UntisPlus.ipa
 
       - name: Upload iOS IPA Artifact
         uses: actions/upload-artifact@v4
         with:
           name: UntisPlus-iOS-Debug-IPA
-          path: apps/web/ios/App/build/UntisPlus-unsigned.ipa
+          path: |
+            apps/web/ios/App/build/UntisPlus-unsigned.ipa
+            apps/web/ios/App/build/UntisPlus.ipa
           if-no-files-found: error
+
+  release:
+    name: Publish Release Assets (APK & IPA)
+    runs-on: ubuntu-latest
+    needs: [build-android, build-ios]
+    if: |
+      !cancelled() && !failure() && (
+        github.event_name == 'release' ||
+        startsWith(github.ref, 'refs/tags/') ||
+        (github.event_name == 'workflow_dispatch' && inputs.create_release)
+      )
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download Android APK Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: UntisPlus-Android-Debug-APK
+          path: download-apk
+
+      - name: Download iOS IPA Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: UntisPlus-iOS-Debug-IPA
+          path: download-ipa
+
+      - name: Prepare Release Assets
+        run: |
+          mkdir -p release-assets
+          APK_FILE=$(find download-apk -type f -name "*.apk" | head -n 1)
+          IPA_FILE=$(find download-ipa -type f -name "*.ipa" | head -n 1)
+
+          if [ -f "$APK_FILE" ]; then
+            echo "Found Android APK: $APK_FILE"
+            cp "$APK_FILE" release-assets/UntisPlus.apk
+            cp "$APK_FILE" release-assets/UntisPlus-debug.apk
+          else
+            echo "❌ Error: APK file not found in download-apk" >&2
+            exit 1
+          fi
+
+          if [ -f "$IPA_FILE" ]; then
+            echo "Found iOS IPA: $IPA_FILE"
+            cp "$IPA_FILE" release-assets/UntisPlus.ipa
+            cp "$IPA_FILE" release-assets/UntisPlus-unsigned.ipa
+          else
+            echo "❌ Error: IPA file not found in download-ipa" >&2
+            exit 1
+          fi
+
+          cd release-assets
+          sha256sum UntisPlus.apk UntisPlus-debug.apk UntisPlus.ipa UntisPlus-unsigned.ipa > SHA256SUMS.txt
+          cd ..
+          echo "Prepared release assets:"
+          ls -lh release-assets/
+
+      - name: Upload Binaries to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event.release.tag_name || (startsWith(github.ref, 'refs/tags/') && github.ref_name) || inputs.tag_name || 'v0.1.0' }}
+          name: ${{ github.event.release.name || (startsWith(github.ref, 'refs/tags/') && github.ref_name) || inputs.release_title || 'Untis⁺ Mobile Release' }}
+          draft: false
+          prerelease: ${{ inputs.prerelease || false }}
+          generate_release_notes: true
+          files: |
+            release-assets/UntisPlus.apk
+            release-assets/UntisPlus-debug.apk
+            release-assets/UntisPlus.ipa
+            release-assets/UntisPlus-unsigned.ipa
+            release-assets/SHA256SUMS.txt
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+

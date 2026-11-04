@@ -47,9 +47,11 @@ if [ -f "$APK_SRC" ]; then
   OUT_DIR="$REPO_ROOT/dist-mobile"
   mkdir -p "$OUT_DIR"
   cp "$APK_SRC" "$OUT_DIR/UntisPlus-debug.apk"
+  cp "$APK_SRC" "$OUT_DIR/UntisPlus.apk"
   echo "✅ Success! Android APK generated:"
   echo "   📁 $OUT_DIR/UntisPlus-debug.apk"
-  ls -lh "$OUT_DIR/UntisPlus-debug.apk"
+  echo "   📁 $OUT_DIR/UntisPlus.apk"
+  ls -lh "$OUT_DIR/UntisPlus-debug.apk" "$OUT_DIR/UntisPlus.apk"
 else
   echo "❌ Error: APK output file not found at $APK_SRC"
   exit 1
